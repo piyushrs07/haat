@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+{% block title %}Seller Login - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">Seller Login</h2>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="POST">
+        {% csrf_token %}
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit" class="btn" style="width:100%;">Login</button>
+    </form>
+    <p style="margin-top:14px;">Want to sell on Haat? <a href="/register/seller/">Register your shop</a></p>
+</div>
+{% endblock %}

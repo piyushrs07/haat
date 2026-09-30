@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+{% block title %}Seller Dashboard - Haat{% endblock %}
+
+{% block content %}
+<p class="badge" style="margin-bottom:14px;">🛍️ You are logged in as a Seller</p>
+<h2 class="section-title" style="margin-top:0;">{{ seller.shop_name }}</h2>
+
+<div class="stats">
+    <div class="stat"><b>{{ products|length }}</b>Products</div>
+    <div class="stat"><b>{{ orders|length }}</b>Orders</div>
+</div>
+
+<h3 class="section-title">Your Products</h3>
+<p style="margin-bottom:14px;">
+    <a class="btn btn-sm" href="/seller/add-product/">+ Add New Product</a>
+    <a class="btn btn-sm btn-ghost" href="/products/">Browse Marketplace</a>
+</p>
+
+<div class="grid">
+    {% for product in products %}
+    <div class="card product-card">
+        {% if product.photo %}
+            <div class="product-img" style="background:none; padding:0;"><img src="{{ product.photo.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;"></div>
+        {% else %}
+            <div class="product-img">{{ product.name|slice:":1"|upper }}</div>
+        {% endif %}
+        <div class="product-body">
+            <span class="tag">{{ product.category }}</span>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="price">₹{{ product.price }}</p>
+            <div class="card-actions">
+                <a class="btn btn-sm btn-ghost" href="/seller/product/edit/{{ product.id }}/">Edit</a>
+                <a class="btn btn-sm btn-danger" href="/seller/product/delete/{{ product.id }}/">Delete</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="empty">You haven't added any products yet.</p>
+    {% endfor %}
+</div>
+
+<h3 class="section-title">Orders for Your Products</h3>
+{% for order in orders %}
+<div class="card" style="margin-bottom:14px;">
+    <div class="row-card" style="margin-bottom:0;">
+        <div>
+            <strong>Order #{{ order.id }} - {{ order.product.name }}</strong><br>
+            <span class="seller-line">Customer: {{ order.customer.name }} · Qty {{ order.quantity }} · {{ order.get_payment_method_display }}</span><br>
+            <span class="price">₹{{ order.total_price }}</span>
+            <span class="seller-line">(incl. ₹{{ order.delivery_charge }} delivery)</span><br>
+            <span class="seller-line">Deliver to: {{ order.delivery_address }}</span>
+        </div>
+        <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span>
+    </div>
+
+    <form method="POST" action="/order/update-status/{{ order.id }}/" class="status-form">
+        {% csrf_token %}
+        <select name="status">
+            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+            <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+        <button type="submit" class="btn btn-sm">Update Status</button>
+        <a class="btn btn-sm btn-ghost" href="/messages/customer/{{ order.customer.id }}/">Message Customer</a>
+    </form>
+</div>
+{% empty %}
+<p class="empty">No orders yet.</p>
+{% endfor %}
+
+<hr style="margin:32px 0 16px;">
+<a class="btn btn-sm btn-danger" href="/seller/delete-account/">Delete My Shop Account</a>
+{% endblock %}

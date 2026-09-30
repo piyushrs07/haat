@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% block title %}Place Order - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">Place Your Order</h2>
+
+    <div class="summary-box">
+        <strong>{{ product.name }}</strong><br>
+        <span class="price">₹{{ product.price }}</span><br>
+        <span class="seller-line">Sold by {{ product.seller.shop_name }}</span>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Quantity</label>
+        <input type="number" name="quantity" value="1" min="1" required>
+
+        <label>Delivery Distance</label>
+        <select name="distance_zone" required>
+            <option value="near">Nearby (0-3 km) - No extra charge</option>
+            <option value="medium">Medium (3-8 km) - ₹30 delivery charge</option>
+            <option value="far">Far (8+ km) - ₹60 delivery charge</option>
+        </select>
+
+        <label>Payment Method</label>
+        <select name="payment_method" required>
+            <option value="online">Online</option>
+            <option value="offline">Offline (pay on delivery)</option>
+        </select>
+
+        <label>Delivery Address</label>
+        <textarea name="delivery_address" rows="3" required></textarea>
+
+        <button type="submit" class="btn" style="width:100%;">Place Order</button>
+    </form>
+</div>
+{% endblock %}

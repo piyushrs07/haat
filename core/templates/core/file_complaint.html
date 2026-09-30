@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block title %}File a Complaint - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">File a Complaint</h2>
+
+    <div class="summary-box">
+        Order #{{ order.id }} - {{ order.product.name }}<br>
+        <span class="seller-line">Sold by {{ order.product.seller.shop_name }}</span>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Describe the issue</label>
+        <textarea name="description" rows="5" required></textarea>
+
+        <button type="submit" class="btn" style="width:100%;">Submit Complaint</button>
+    </form>
+</div>
+{% endblock %}

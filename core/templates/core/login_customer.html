@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+{% block title %}Customer Login - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">Customer Login</h2>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="POST">
+        {% csrf_token %}
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit" class="btn" style="width:100%;">Login</button>
+    </form>
+    <p style="margin-top:14px;">New here? <a href="/register/customer/">Create an account</a></p>
+</div>
+{% endblock %}

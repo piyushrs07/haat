@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+{% block title %}My Wishlist - Haat{% endblock %}
+
+{% block content %}
+<h2 class="section-title" style="margin-top:0;">My Wishlist</h2>
+
+<div class="grid">
+    {% for item in wishlist_items %}
+    <div class="card product-card">
+        <div class="product-img">{{ item.product.name|slice:":1"|upper }}</div>
+        <div class="product-body">
+            <span class="tag">{{ item.product.category }}</span>
+            <h3 class="product-name">{{ item.product.name }}</h3>
+            <p class="price">₹{{ item.product.price }}</p>
+            <p class="seller-line">Sold by {{ item.product.seller.shop_name }}</p>
+            <div class="card-actions">
+                <a class="btn btn-sm" href="/order/{{ item.product.id }}/">Buy Now</a>
+                <a class="btn btn-sm btn-ghost" href="/product/{{ item.product.id }}/wishlist/">Remove</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="empty">Your wishlist is empty. <a href="/products/">Browse products</a></p>
+    {% endfor %}
+</div>
+{% endblock %}

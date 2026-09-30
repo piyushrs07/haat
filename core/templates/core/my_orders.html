@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+{% block title %}My Orders - Haat{% endblock %}
+
+{% block content %}
+<h2 class="section-title" style="margin-top:0;">My Orders</h2>
+
+{% for order in orders %}
+<div class="card row-card">
+    <div>
+        <strong>Order #{{ order.id }} - {{ order.product.name }}</strong><br>
+        <span class="seller-line">Qty {{ order.quantity }} · {{ order.get_payment_method_display }} · Sold by {{ order.product.seller.shop_name }}</span><br>
+        <span class="price">₹{{ order.total_price }}</span>
+        <span class="seller-line">(incl. ₹{{ order.delivery_charge }} delivery)</span>
+    </div>
+    <div style="text-align:right;">
+        <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span><br><br>
+        <a class="btn btn-sm btn-ghost" href="/order/{{ order.id }}/complaint/">File a Complaint</a>
+    </div>
+</div>
+{% empty %}
+<p class="empty">You haven't placed any orders yet. <a href="/products/">Start shopping</a></p>
+{% endfor %}
+{% endblock %}

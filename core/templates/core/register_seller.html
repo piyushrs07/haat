@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+{% block title %}Become a Seller - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">Register Your Shop</h2>
+    <p style="margin-bottom:14px; opacity:0.8;">Your account will be reviewed and approved before you can list products.</p>
+    {% if error %}<p class="error">{{ error }} <a href="/login/seller/">Go to login</a></p>{% endif %}
+    <form method="POST">
+        {% csrf_token %}
+        <label>Your Name</label>
+        <input type="text" name="name" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <label>Phone</label>
+        <input type="text" name="phone" required>
+
+        <label>Shop Name</label>
+        <input type="text" name="shop_name" required>
+
+        <label>Type of Products (e.g. handmade, food, crafts)</label>
+        <input type="text" name="product_type" required>
+
+        <label>Shop Address</label>
+        <textarea name="address" rows="3" required></textarea>
+
+        <label>About Your Shop</label>
+        <textarea name="description" rows="3"></textarea>
+
+        <button type="submit" class="btn" style="width:100%;">Submit for Approval</button>
+    </form>
+    <p style="margin-top:14px;">Already approved? <a href="/login/seller/">Login</a></p>
+</div>
+{% endblock %}

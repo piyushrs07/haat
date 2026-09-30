@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+{% block title %}Chat - Haat{% endblock %}
+
+{% block content %}
+<div style="max-width:640px; margin:0 auto;">
+    <h2 class="section-title" style="margin-top:0;">Chat with {{ chat_title }}</h2>
+
+    <div class="chat-box">
+        {% for msg in chat_messages %}
+            <div class="bubble {% if msg.sender == me %}mine{% endif %}">{{ msg.content }}</div>
+        {% empty %}
+            <p class="empty">No messages yet. Say hello!</p>
+        {% endfor %}
+    </div>
+
+    <form method="POST" class="chat-form">
+        {% csrf_token %}
+        <input type="text" name="content" placeholder="Type your message" required>
+        <button type="submit" class="btn">Send</button>
+    </form>
+</div>
+{% endblock %}

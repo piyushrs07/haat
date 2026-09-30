@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+{% block title %}Are you sure? - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box" style="text-align:center;">
+    <h2 class="section-title" style="margin-top:0;">Are you sure?</h2>
+    <p style="margin-bottom:18px;">{{ message }}</p>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="background:#c0392b;">Yes, delete</button>
+        <a class="btn btn-ghost" href="{{ cancel_url }}">Cancel</a>
+    </form>
+</div>
+{% endblock %}
