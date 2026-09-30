@@ -1,0 +1,1 @@
+web: gunicorn vendorapp.wsgi --log-file -
