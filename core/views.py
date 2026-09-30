@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 from .models import Customer, Seller, Product, Order, Review, Wishlist, Message, Complaint
+from django.http import HttpResponse
 
 def home(request):
     return render(request, 'core/home.html')
@@ -400,3 +401,10 @@ def my_orders(request):
     orders = Order.objects.filter(customer=customer).order_by('-created_at')
 
     return render(request, 'core/my_orders.html', {'orders': orders})
+
+def create_admin_temp(request):
+    from django.contrib.auth.models import User
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@haat.com', 'Haat@2026')
+        return HttpResponse("Superuser created! Username: admin, Password: Haat@2026")
+    return HttpResponse("Superuser already exists.")

