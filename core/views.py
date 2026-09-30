@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 from .models import Customer, Seller, Product, Order, Review, Wishlist, Message, Complaint
 
@@ -25,6 +26,7 @@ def register_customer(request):
             phone=phone,
             address=address
         )
+        messages.success(request, 'Registration successful! Please log in.')
         return redirect('login_customer')
 
     return render(request, 'core/register_customer.html')
@@ -55,6 +57,7 @@ def register_seller(request):
             address=address,
             description=description
         )
+        messages.success(request, 'Registration submitted! Your account needs approval before you can log in.')
         return redirect('login_seller')
 
     return render(request, 'core/register_seller.html')
@@ -98,6 +101,7 @@ def login_seller(request):
 
 def logout_user(request):
     request.session.flush()
+    messages.success(request, 'You have been logged out.')
     return redirect('home')
 
 def add_product(request):
@@ -122,6 +126,7 @@ def add_product(request):
             category=category,
             photo=photo
         )
+        messages.success(request, f'"{name}" was added successfully.')
         return redirect('seller_dashboard')
 
     return render(request, 'core/add_product.html')
@@ -174,6 +179,7 @@ def place_order(request, product_id):
             payment_method=payment_method,
             delivery_address=delivery_address
         )
+        messages.success(request, 'Order placed successfully!')
         return redirect('my_orders')
 
     return render(request, 'core/place_order.html', {'product': product})
@@ -204,6 +210,7 @@ def update_order_status(request, order_id):
         new_status = request.POST.get('status')
         order.status = new_status
         order.save()
+        messages.success(request, f'Order #{order.id} status updated.')
 
     return redirect('seller_dashboard')
 
@@ -225,6 +232,7 @@ def add_review(request, product_id):
             rating=rating,
             comment=comment
         )
+        messages.success(request, 'Review submitted, thank you!')
         return redirect('product_list')
 
     return render(request, 'core/add_review.html', {'product': product})
@@ -240,8 +248,10 @@ def toggle_wishlist(request, product_id):
     existing = Wishlist.objects.filter(customer=customer, product=product).first()
     if existing:
         existing.delete()
+        messages.success(request, f'Removed "{product.name}" from wishlist.')
     else:
         Wishlist.objects.create(customer=customer, product=product)
+        messages.success(request, f'Added "{product.name}" to wishlist.')
 
     return redirect('product_list')
 
@@ -320,6 +330,7 @@ def edit_product(request, product_id):
         if request.FILES.get('photo'):
             product.photo = request.FILES.get('photo')
         product.save()
+        messages.success(request, f'"{product.name}" was updated.')
         return redirect('seller_dashboard')
 
     return render(request, 'core/edit_product.html', {'product': product})
@@ -332,7 +343,9 @@ def delete_product(request, product_id):
     product = Product.objects.get(id=product_id, seller_id=seller_id)
 
     if request.method == 'POST':
+        name = product.name
         product.delete()
+        messages.success(request, f'"{name}" was deleted.')
         return redirect('seller_dashboard')
 
     return render(request, 'core/confirm_delete.html', {
@@ -350,6 +363,7 @@ def delete_seller_account(request):
     if request.method == 'POST':
         seller.delete()
         request.session.flush()
+        messages.success(request, 'Your shop account has been deleted.')
         return redirect('home')
 
     return render(request, 'core/confirm_delete.html', {
@@ -372,6 +386,7 @@ def file_complaint(request, order_id):
             customer=customer,
             description=description
         )
+        messages.success(request, 'Complaint filed. We will look into it.')
         return redirect('my_orders')
 
     return render(request, 'core/file_complaint.html', {'order': order})
