@@ -24,7 +24,7 @@
         <input type="text" name="category" value="{{ product.category }}" required>
 
         <label>Replace Photo (leave empty to keep current)</label>
-        <input type="file" name="photo" accept="image/*">
+        <input type="file" name="photo" accept="image/*" capture="environment">
 
         <button type="submit" class="btn" style="width:100%;">Save Changes</button>
     </form>

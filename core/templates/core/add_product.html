@@ -10,18 +10,18 @@
         <input type="text" name="name" required>
 
         <label>Description</label>
-        <textarea name="description" rows="3" required></textarea>
+        <textarea name="description" rows="4" required></textarea>
 
         <label>Price (₹)</label>
-        <input type="number" name="price" step="0.01" required>
+        <input type="number" step="0.01" name="price" required>
 
         <label>Category</label>
         <input type="text" name="category" required>
 
-        <label>Photo</label>
-        <input type="file" name="photo" accept="image/*">
+        <label>Product Photo</label>
+        <input type="file" name="photo" accept="image/*" capture="environment">
 
-        <button type="submit" class="btn">Add Product</button>
+        <button type="submit" class="btn" style="width:100%;">Add Product</button>
     </form>
 </div>
 {% endblock %}
