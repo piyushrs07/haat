@@ -1,11 +1,24 @@
 from django.db import models
+from django.db.models import Avg
+
 
 class Customer(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
-    address = models.TextField()
+
+    # Structured address (replaces the old single text box)
+    street_address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, default='Goa')
+    pincode = models.CharField(max_length=10, blank=True, null=True)
+
+    # Email OTP verification
+    is_verified = models.BooleanField(default=False)
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_created_at = models.DateTimeField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -19,14 +32,33 @@ class Seller(models.Model):
     phone = models.CharField(max_length=15)
     shop_name = models.CharField(max_length=100)
     product_type = models.CharField(max_length=100)
-    address = models.TextField()
-    description = models.TextField(blank=True)
+
+    # Structured address (replaces the old single text box)
+    street_address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, default='Goa')
+    pincode = models.CharField(max_length=10, blank=True, null=True)
+
+    description = models.TextField(blank=True)  # shown as "Business Description" in templates
+
+    # Email OTP verification
+    is_verified = models.BooleanField(default=False)
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_created_at = models.DateTimeField(blank=True, null=True)
+
     is_approved = models.BooleanField(default=False)
     is_suspended = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.shop_name
+
+    def average_rating(self):
+        result = self.shopreview_set.aggregate(Avg('rating'))['rating__avg']
+        return round(result, 1) if result else None
+
+    def review_count(self):
+        return self.shopreview_set.count()
 
 
 class Product(models.Model):
@@ -41,6 +73,15 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/gallery/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 
 class Order(models.Model):
@@ -70,6 +111,7 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     delivery_address = models.TextField()
+    estimated_delivery_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -85,6 +127,17 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.rating}★ - {self.product.name}"
+
+
+class ShopReview(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.rating}★ for {self.seller.shop_name}"
 
 
 class Message(models.Model):

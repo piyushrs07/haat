@@ -27,12 +27,25 @@
         {% else %}
             <div class="product-img">{{ product.name|slice:":1"|upper }}</div>
         {% endif %}
+
+        {% if product.images.all %}
+        <div style="display:flex; gap:4px; padding:6px 0; overflow-x:auto;">
+            {% for img in product.images.all %}
+                <img src="{{ img.image.url }}" alt="More of {{ product.name }}" style="width:44px; height:44px; object-fit:cover; border-radius:4px; flex-shrink:0;">
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="product-body">
             <span class="tag">{{ product.category }}</span>
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-desc">{{ product.description|truncatechars:70 }}</p>
             <p class="price">₹{{ product.price }}</p>
-            <p class="seller-line">Sold by {{ product.seller.shop_name }}</p>
+            <p class="seller-line">Sold by {{ product.seller.shop_name }} &middot; 📞 {{ product.seller.phone }}</p>
+
+            {% if product.seller.average_rating %}
+                <p class="rating">Shop rating: ★ {{ product.seller.average_rating }} ({{ product.seller.review_count }} review{{ product.seller.review_count|pluralize }})</p>
+            {% endif %}
 
             {% if product.reviews.count %}
                 <p class="rating">★ {{ product.reviews.count }} review{{ product.reviews.count|pluralize }}</p>
@@ -50,6 +63,7 @@
                 <a class="btn btn-sm btn-ghost" href="/product/{{ product.id }}/wishlist/">♡ Wishlist</a>
                 <a class="btn btn-sm btn-ghost" href="/messages/seller/{{ product.seller.id }}/">Message</a>
                 <a class="btn btn-sm btn-ghost" href="/product/{{ product.id }}/review/">Review</a>
+                <a class="btn btn-sm btn-ghost" href="/seller/{{ product.seller.id }}/review/">Rate Shop</a>
             </div>
             {% endif %}
         </div>

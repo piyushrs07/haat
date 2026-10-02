@@ -26,10 +26,19 @@
         <label>Type of Products (e.g. handmade, food, crafts)</label>
         <input type="text" name="product_type" required>
 
-        <label>Shop Address</label>
-        <textarea name="address" rows="3" required></textarea>
+        <label>Street / Area</label>
+        <input type="text" name="street_address" required>
 
-        <label>About Your Shop</label>
+        <label>City</label>
+        <input type="text" name="city" required>
+
+        <label>State</label>
+        <input type="text" name="state" value="Goa" required>
+
+        <label>Pincode</label>
+        <input type="text" name="pincode" maxlength="6" required>
+
+        <label>Business Description</label>
         <textarea name="description" rows="3"></textarea>
 
         <button type="submit" class="btn" style="width:100%;">Submit for Approval</button>

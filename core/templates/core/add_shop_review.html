@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+{% block title %}Rate This Shop - Haat{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h2 class="section-title" style="margin-top:0;">Rate: {{ seller.shop_name }}</h2>
+    <p style="margin-bottom:14px; opacity:0.8;">Rate your overall experience with this shop, separate from individual product reviews.</p>
+    <form method="POST">
+        {% csrf_token %}
+        <label>Rating</label>
+        <select name="rating" required>
+            <option value="5">★★★★★ - Excellent</option>
+            <option value="4">★★★★ - Good</option>
+            <option value="3">★★★ - Average</option>
+            <option value="2">★★ - Poor</option>
+            <option value="1">★ - Terrible</option>
+        </select>
+
+        <label>Your Comment</label>
+        <textarea name="comment" rows="4"></textarea>
+
+        <button type="submit" class="btn" style="width:100%;">Submit Rating</button>
+    </form>
+</div>
+{% endblock %}

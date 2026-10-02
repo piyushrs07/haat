@@ -18,8 +18,11 @@
         <label>Category</label>
         <input type="text" name="category" required>
 
-        <label>Product Photo</label>
+        <label>Main Product Photo</label>
         <input type="file" name="photo" accept="image/*" capture="environment">
+
+        <label>Additional Photos (optional, up to 3-4)</label>
+        <input type="file" name="images" accept="image/*" capture="environment" multiple>
 
         <button type="submit" class="btn" style="width:100%;">Add Product</button>
     </form>

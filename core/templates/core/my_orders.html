@@ -10,7 +10,10 @@
         <strong>Order #{{ order.id }} - {{ order.product.name }}</strong><br>
         <span class="seller-line">Qty {{ order.quantity }} · {{ order.get_payment_method_display }} · Sold by {{ order.product.seller.shop_name }}</span><br>
         <span class="price">₹{{ order.total_price }}</span>
-        <span class="seller-line">(incl. ₹{{ order.delivery_charge }} delivery)</span>
+        <span class="seller-line">(incl. ₹{{ order.delivery_charge }} delivery)</span><br>
+        {% if order.estimated_delivery_date %}
+            <span class="seller-line" style="color:#e76f51; font-weight:600;">Estimated delivery by {{ order.estimated_delivery_date|date:"D, d M" }}</span>
+        {% endif %}
     </div>
     <div style="text-align:right;">
         <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span><br><br>

@@ -8,12 +8,25 @@ urlpatterns = [
     path('login/customer/', views.login_customer, name='login_customer'),
     path('login/seller/', views.login_seller, name='login_seller'),
     path('logout/', views.logout_user, name='logout'),
+
+    # OTP verification - customer
+    path('verify/customer/', views.verify_customer_otp, name='verify_customer_otp'),
+    path('verify/customer/resend/', views.resend_customer_otp, name='resend_customer_otp'),
+
+    # OTP verification - seller
+    path('verify/seller/', views.verify_seller_otp, name='verify_seller_otp'),
+    path('verify/seller/resend/', views.resend_seller_otp, name='resend_seller_otp'),
+
     path('seller/add-product/', views.add_product, name='add_product'),
     path('products/', views.product_list, name='product_list'),
     path('order/<int:product_id>/', views.place_order, name='place_order'),
     path('seller/dashboard/', views.seller_dashboard, name='seller_dashboard'),
     path('order/update-status/<int:order_id>/', views.update_order_status, name='update_order_status'),
     path('product/<int:product_id>/review/', views.add_review, name='add_review'),
+
+    # Shop (seller) review - overall rating
+    path('seller/<int:seller_id>/review/', views.add_shop_review, name='add_shop_review'),
+
     path('product/<int:product_id>/wishlist/', views.toggle_wishlist, name='toggle_wishlist'),
     path('wishlist/', views.view_wishlist, name='view_wishlist'),
     path('messages/seller/<int:seller_id>/', views.chat_with_seller, name='chat_with_seller'),

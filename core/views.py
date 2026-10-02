@@ -1,11 +1,55 @@
+import random
+from datetime import timedelta
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
-from .models import Customer, Seller, Product, Order, Review, Wishlist, Message, Complaint
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+
+from .models import Customer, Seller, Product, ProductImage, Order, Review, ShopReview, Wishlist, Message, Complaint
 from django.http import HttpResponse
+
+
+# ---------- Helper functions ----------
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+
+def send_otp_email(to_email, name, otp):
+    subject = 'Your Haat verification code'
+    message = f'Hi {name},\n\nYour verification code is: {otp}\n\nThis code expires in 10 minutes.\n\n- Haat'
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=False)
+
+
+def send_notification_email(to_email, subject, message):
+    try:
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=True)
+    except Exception:
+        pass
+
+
+def send_admin_notification(subject, message):
+    admin_email = getattr(settings, 'ADMIN_EMAIL', None)
+    if admin_email:
+        send_notification_email(admin_email, subject, message)
+
+
+def otp_is_valid(otp_created_at):
+    if not otp_created_at:
+        return False
+    return timezone.now() - otp_created_at <= timedelta(minutes=10)
+
+
+# ---------- Home ----------
 
 def home(request):
     return render(request, 'core/home.html')
+
+
+# ---------- Customer registration + OTP ----------
 
 def register_customer(request):
     if request.method == 'POST':
@@ -13,24 +57,89 @@ def register_customer(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         phone = request.POST.get('phone')
-        address = request.POST.get('address')
+        street_address = request.POST.get('street_address')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        pincode = request.POST.get('pincode')
 
         if Customer.objects.filter(email=email).exists():
             return render(request, 'core/register_customer.html', {
                 'error': 'This email is already registered. Please log in instead.'
             })
 
-        Customer.objects.create(
+        otp = generate_otp()
+        customer = Customer.objects.create(
             name=name,
             email=email,
             password=make_password(password),
             phone=phone,
-            address=address
+            street_address=street_address,
+            city=city,
+            state=state,
+            pincode=pincode,
+            otp_code=otp,
+            otp_created_at=timezone.now(),
         )
-        messages.success(request, 'Registration successful! Please log in.')
-        return redirect('login_customer')
+        send_otp_email(email, name, otp)
+
+        request.session['pending_customer_id'] = customer.id
+        messages.success(request, 'A verification code has been sent to your email.')
+        return redirect('verify_customer_otp')
 
     return render(request, 'core/register_customer.html')
+
+
+def verify_customer_otp(request):
+    pending_id = request.session.get('pending_customer_id')
+    if not pending_id:
+        return redirect('register_customer')
+
+    customer = Customer.objects.get(id=pending_id)
+
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+
+        if not otp_is_valid(customer.otp_created_at):
+            messages.error(request, 'Your code has expired. Please request a new one.')
+            return render(request, 'core/verify_otp.html', {'email': customer.email})
+
+        if entered_otp == customer.otp_code:
+            customer.is_verified = True
+            customer.otp_code = None
+            customer.otp_created_at = None
+            customer.save()
+            del request.session['pending_customer_id']
+
+            send_admin_notification(
+                'New customer registered on Haat',
+                f'{customer.name} ({customer.email}) just registered as a customer.'
+            )
+
+            request.session['customer_id'] = customer.id
+            messages.success(request, 'Email verified! Welcome to Haat.')
+            return redirect('product_list')
+
+        messages.error(request, 'Incorrect code. Please try again.')
+
+    return render(request, 'core/verify_otp.html', {'email': customer.email})
+
+
+def resend_customer_otp(request):
+    pending_id = request.session.get('pending_customer_id')
+    if not pending_id:
+        return redirect('register_customer')
+
+    customer = Customer.objects.get(id=pending_id)
+    otp = generate_otp()
+    customer.otp_code = otp
+    customer.otp_created_at = timezone.now()
+    customer.save()
+    send_otp_email(customer.email, customer.name, otp)
+    messages.success(request, 'A new code has been sent to your email.')
+    return redirect('verify_customer_otp')
+
+
+# ---------- Seller registration + OTP ----------
 
 def register_seller(request):
     if request.method == 'POST':
@@ -40,7 +149,10 @@ def register_seller(request):
         phone = request.POST.get('phone')
         shop_name = request.POST.get('shop_name')
         product_type = request.POST.get('product_type')
-        address = request.POST.get('address')
+        street_address = request.POST.get('street_address')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        pincode = request.POST.get('pincode')
         description = request.POST.get('description')
 
         if Seller.objects.filter(email=email).exists():
@@ -48,20 +160,81 @@ def register_seller(request):
                 'error': 'This email is already registered. Please log in instead.'
             })
 
-        Seller.objects.create(
+        otp = generate_otp()
+        seller = Seller.objects.create(
             name=name,
             email=email,
             password=make_password(password),
             phone=phone,
             shop_name=shop_name,
             product_type=product_type,
-            address=address,
-            description=description
+            street_address=street_address,
+            city=city,
+            state=state,
+            pincode=pincode,
+            description=description,
+            otp_code=otp,
+            otp_created_at=timezone.now(),
         )
-        messages.success(request, 'Registration submitted! Your account needs approval before you can log in.')
-        return redirect('login_seller')
+        send_otp_email(email, name, otp)
+
+        request.session['pending_seller_id'] = seller.id
+        messages.success(request, 'A verification code has been sent to your email.')
+        return redirect('verify_seller_otp')
 
     return render(request, 'core/register_seller.html')
+
+
+def verify_seller_otp(request):
+    pending_id = request.session.get('pending_seller_id')
+    if not pending_id:
+        return redirect('register_seller')
+
+    seller = Seller.objects.get(id=pending_id)
+
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+
+        if not otp_is_valid(seller.otp_created_at):
+            messages.error(request, 'Your code has expired. Please request a new one.')
+            return render(request, 'core/verify_otp.html', {'email': seller.email})
+
+        if entered_otp == seller.otp_code:
+            seller.is_verified = True
+            seller.otp_code = None
+            seller.otp_created_at = None
+            seller.save()
+            del request.session['pending_seller_id']
+
+            send_admin_notification(
+                'New seller awaiting approval on Haat',
+                f'{seller.shop_name} ({seller.email}) just registered and is waiting for approval.'
+            )
+
+            messages.success(request, 'Email verified! Your account now needs admin approval before you can log in.')
+            return redirect('login_seller')
+
+        messages.error(request, 'Incorrect code. Please try again.')
+
+    return render(request, 'core/verify_otp.html', {'email': seller.email})
+
+
+def resend_seller_otp(request):
+    pending_id = request.session.get('pending_seller_id')
+    if not pending_id:
+        return redirect('register_seller')
+
+    seller = Seller.objects.get(id=pending_id)
+    otp = generate_otp()
+    seller.otp_code = otp
+    seller.otp_created_at = timezone.now()
+    seller.save()
+    send_otp_email(seller.email, seller.name, otp)
+    messages.success(request, 'A new code has been sent to your email.')
+    return redirect('verify_seller_otp')
+
+
+# ---------- Login / Logout ----------
 
 def login_customer(request):
     if request.method == 'POST':
@@ -72,12 +245,19 @@ def login_customer(request):
         except Customer.DoesNotExist:
             return render(request, 'core/login_customer.html', {'error': 'Invalid email or password'})
 
-        if check_password(password, customer.password):
-            request.session['customer_id'] = customer.id
-            return redirect('product_list')
-        return render(request, 'core/login_customer.html', {'error': 'Invalid email or password'})
+        if not check_password(password, customer.password):
+            return render(request, 'core/login_customer.html', {'error': 'Invalid email or password'})
+
+        if not customer.is_verified:
+            request.session['pending_customer_id'] = customer.id
+            messages.error(request, 'Please verify your email first.')
+            return redirect('verify_customer_otp')
+
+        request.session['customer_id'] = customer.id
+        return redirect('product_list')
 
     return render(request, 'core/login_customer.html')
+
 
 def login_seller(request):
     if request.method == 'POST':
@@ -90,6 +270,11 @@ def login_seller(request):
 
         if not check_password(password, seller.password):
             return render(request, 'core/login_seller.html', {'error': 'Invalid email or password'})
+
+        if not seller.is_verified:
+            request.session['pending_seller_id'] = seller.id
+            messages.error(request, 'Please verify your email first.')
+            return redirect('verify_seller_otp')
         if seller.is_suspended:
             return render(request, 'core/login_seller.html', {'error': 'Your account has been suspended'})
         if not seller.is_approved:
@@ -100,10 +285,14 @@ def login_seller(request):
 
     return render(request, 'core/login_seller.html')
 
+
 def logout_user(request):
     request.session.flush()
     messages.success(request, 'You have been logged out.')
     return redirect('home')
+
+
+# ---------- Products ----------
 
 def add_product(request):
     seller_id = request.session.get('seller_id')
@@ -118,8 +307,9 @@ def add_product(request):
         price = request.POST.get('price')
         category = request.POST.get('category')
         photo = request.FILES.get('photo')
+        extra_images = request.FILES.getlist('images')
 
-        Product.objects.create(
+        product = Product.objects.create(
             seller=seller,
             name=name,
             description=description,
@@ -127,10 +317,15 @@ def add_product(request):
             category=category,
             photo=photo
         )
+
+        for img in extra_images:
+            ProductImage.objects.create(product=product, image=img)
+
         messages.success(request, f'"{name}" was added successfully.')
         return redirect('seller_dashboard')
 
     return render(request, 'core/add_product.html')
+
 
 def product_list(request):
     products = Product.objects.filter(is_available=True)
@@ -151,6 +346,54 @@ def product_list(request):
 
     return render(request, 'core/product_list.html', {'products': products})
 
+
+def edit_product(request, product_id):
+    seller_id = request.session.get('seller_id')
+    if not seller_id:
+        return redirect('login_seller')
+
+    product = Product.objects.get(id=product_id, seller_id=seller_id)
+
+    if request.method == 'POST':
+        product.name = request.POST.get('name')
+        product.description = request.POST.get('description')
+        product.price = request.POST.get('price')
+        product.category = request.POST.get('category')
+        if request.FILES.get('photo'):
+            product.photo = request.FILES.get('photo')
+        product.save()
+
+        extra_images = request.FILES.getlist('images')
+        for img in extra_images:
+            ProductImage.objects.create(product=product, image=img)
+
+        messages.success(request, f'"{product.name}" was updated.')
+        return redirect('seller_dashboard')
+
+    return render(request, 'core/edit_product.html', {'product': product})
+
+
+def delete_product(request, product_id):
+    seller_id = request.session.get('seller_id')
+    if not seller_id:
+        return redirect('login_seller')
+
+    product = Product.objects.get(id=product_id, seller_id=seller_id)
+
+    if request.method == 'POST':
+        name = product.name
+        product.delete()
+        messages.success(request, f'"{name}" was deleted.')
+        return redirect('seller_dashboard')
+
+    return render(request, 'core/confirm_delete.html', {
+        'message': 'Delete "' + product.name + '"? This cannot be undone.',
+        'cancel_url': '/seller/dashboard/',
+    })
+
+
+# ---------- Orders ----------
+
 def place_order(request, product_id):
     customer_id = request.session.get('customer_id')
     if not customer_id:
@@ -168,9 +411,12 @@ def place_order(request, product_id):
         delivery_charges = {'near': 0, 'medium': 30, 'far': 60}
         delivery_charge = delivery_charges.get(distance_zone, 0)
 
+        delivery_days = {'near': 1, 'medium': 3, 'far': 5}
+        estimated_delivery_date = timezone.now().date() + timedelta(days=delivery_days.get(distance_zone, 3))
+
         total_price = (product.price * quantity) + delivery_charge
 
-        Order.objects.create(
+        order = Order.objects.create(
             customer=customer,
             product=product,
             quantity=quantity,
@@ -178,12 +424,22 @@ def place_order(request, product_id):
             delivery_charge=delivery_charge,
             distance_zone=distance_zone,
             payment_method=payment_method,
-            delivery_address=delivery_address
+            delivery_address=delivery_address,
+            estimated_delivery_date=estimated_delivery_date,
         )
+
+        send_notification_email(
+            product.seller.email,
+            f'New order on Haat - {product.name}',
+            f'{customer.name} just ordered {quantity} x {product.name}. Total: Rs. {total_price}. '
+            f'Check your seller dashboard for details.'
+        )
+
         messages.success(request, 'Order placed successfully!')
         return redirect('my_orders')
 
     return render(request, 'core/place_order.html', {'product': product})
+
 
 def seller_dashboard(request):
     seller_id = request.session.get('seller_id')
@@ -200,6 +456,7 @@ def seller_dashboard(request):
         'orders': orders
     })
 
+
 def update_order_status(request, order_id):
     seller_id = request.session.get('seller_id')
     if not seller_id:
@@ -211,9 +468,30 @@ def update_order_status(request, order_id):
         new_status = request.POST.get('status')
         order.status = new_status
         order.save()
+
+        send_notification_email(
+            order.customer.email,
+            f'Your Haat order #{order.id} status: {order.get_status_display()}',
+            f'Hi {order.customer.name}, your order for {order.product.name} is now "{order.get_status_display()}".'
+        )
+
         messages.success(request, f'Order #{order.id} status updated.')
 
     return redirect('seller_dashboard')
+
+
+def my_orders(request):
+    customer_id = request.session.get('customer_id')
+    if not customer_id:
+        return redirect('login_customer')
+
+    customer = Customer.objects.get(id=customer_id)
+    orders = Order.objects.filter(customer=customer).order_by('-created_at')
+
+    return render(request, 'core/my_orders.html', {'orders': orders})
+
+
+# ---------- Reviews (product) ----------
 
 def add_review(request, product_id):
     customer_id = request.session.get('customer_id')
@@ -233,10 +511,46 @@ def add_review(request, product_id):
             rating=rating,
             comment=comment
         )
+
+        send_notification_email(
+            product.seller.email,
+            f'New review on {product.name}',
+            f'{customer.name} left a {rating}-star review on {product.name}: "{comment}"'
+        )
+
         messages.success(request, 'Review submitted, thank you!')
         return redirect('product_list')
 
     return render(request, 'core/add_review.html', {'product': product})
+
+
+# ---------- Shop reviews (overall seller rating) ----------
+
+def add_shop_review(request, seller_id):
+    customer_id = request.session.get('customer_id')
+    if not customer_id:
+        return redirect('login_customer')
+
+    customer = Customer.objects.get(id=customer_id)
+    seller = Seller.objects.get(id=seller_id)
+
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+
+        ShopReview.objects.create(
+            customer=customer,
+            seller=seller,
+            rating=rating,
+            comment=comment
+        )
+        messages.success(request, f'Thanks for rating {seller.shop_name}!')
+        return redirect('product_list')
+
+    return render(request, 'core/add_shop_review.html', {'seller': seller})
+
+
+# ---------- Wishlist ----------
 
 def toggle_wishlist(request, product_id):
     customer_id = request.session.get('customer_id')
@@ -256,6 +570,7 @@ def toggle_wishlist(request, product_id):
 
     return redirect('product_list')
 
+
 def view_wishlist(request):
     customer_id = request.session.get('customer_id')
     if not customer_id:
@@ -265,6 +580,9 @@ def view_wishlist(request):
     wishlist_items = Wishlist.objects.filter(customer=customer)
 
     return render(request, 'core/wishlist.html', {'wishlist_items': wishlist_items})
+
+
+# ---------- Messaging ----------
 
 def chat_with_seller(request, seller_id):
     customer_id = request.session.get('customer_id')
@@ -291,6 +609,7 @@ def chat_with_seller(request, seller_id):
         'me': 'customer',
     })
 
+
 def chat_with_customer(request, customer_id):
     seller_id = request.session.get('seller_id')
     if not seller_id:
@@ -316,43 +635,8 @@ def chat_with_customer(request, customer_id):
         'me': 'seller',
     })
 
-def edit_product(request, product_id):
-    seller_id = request.session.get('seller_id')
-    if not seller_id:
-        return redirect('login_seller')
 
-    product = Product.objects.get(id=product_id, seller_id=seller_id)
-
-    if request.method == 'POST':
-        product.name = request.POST.get('name')
-        product.description = request.POST.get('description')
-        product.price = request.POST.get('price')
-        product.category = request.POST.get('category')
-        if request.FILES.get('photo'):
-            product.photo = request.FILES.get('photo')
-        product.save()
-        messages.success(request, f'"{product.name}" was updated.')
-        return redirect('seller_dashboard')
-
-    return render(request, 'core/edit_product.html', {'product': product})
-
-def delete_product(request, product_id):
-    seller_id = request.session.get('seller_id')
-    if not seller_id:
-        return redirect('login_seller')
-
-    product = Product.objects.get(id=product_id, seller_id=seller_id)
-
-    if request.method == 'POST':
-        name = product.name
-        product.delete()
-        messages.success(request, f'"{name}" was deleted.')
-        return redirect('seller_dashboard')
-
-    return render(request, 'core/confirm_delete.html', {
-        'message': 'Delete "' + product.name + '"? This cannot be undone.',
-        'cancel_url': '/seller/dashboard/',
-    })
+# ---------- Account deletion ----------
 
 def delete_seller_account(request):
     seller_id = request.session.get('seller_id')
@@ -372,6 +656,9 @@ def delete_seller_account(request):
         'cancel_url': '/seller/dashboard/',
     })
 
+
+# ---------- Complaints ----------
+
 def file_complaint(request, order_id):
     customer_id = request.session.get('customer_id')
     if not customer_id:
@@ -387,17 +674,14 @@ def file_complaint(request, order_id):
             customer=customer,
             description=description
         )
+
+        send_notification_email(
+            order.product.seller.email,
+            f'Complaint filed on order #{order.id}',
+            f'{customer.name} filed a complaint on order #{order.id} ({order.product.name}): "{description}"'
+        )
+
         messages.success(request, 'Complaint filed. We will look into it.')
         return redirect('my_orders')
 
     return render(request, 'core/file_complaint.html', {'order': order})
-
-def my_orders(request):
-    customer_id = request.session.get('customer_id')
-    if not customer_id:
-        return redirect('login_customer')
-
-    customer = Customer.objects.get(id=customer_id)
-    orders = Order.objects.filter(customer=customer).order_by('-created_at')
-
-    return render(request, 'core/my_orders.html', {'orders': orders})

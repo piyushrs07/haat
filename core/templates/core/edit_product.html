@@ -9,6 +9,14 @@
         <img src="{{ product.photo.url }}" alt="{{ product.name }}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:14px;">
     {% endif %}
 
+    {% if product.images.all %}
+        <div style="display:flex; gap:8px; overflow-x:auto; margin-bottom:14px;">
+            {% for img in product.images.all %}
+                <img src="{{ img.image.url }}" alt="Extra photo" style="width:70px; height:70px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <label>Product Name</label>
@@ -23,8 +31,11 @@
         <label>Category</label>
         <input type="text" name="category" value="{{ product.category }}" required>
 
-        <label>Replace Photo (leave empty to keep current)</label>
+        <label>Replace Main Photo (leave empty to keep current)</label>
         <input type="file" name="photo" accept="image/*" capture="environment">
+
+        <label>Add More Photos (optional)</label>
+        <input type="file" name="images" accept="image/*" capture="environment" multiple>
 
         <button type="submit" class="btn" style="width:100%;">Save Changes</button>
     </form>

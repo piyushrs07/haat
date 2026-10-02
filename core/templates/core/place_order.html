@@ -17,11 +17,13 @@
         <input type="number" name="quantity" value="1" min="1" required>
 
         <label>Delivery Distance</label>
-        <select name="distance_zone" required>
+        <select name="distance_zone" id="distance_zone" required onchange="updateDeliveryEstimate()">
             <option value="near">Nearby (0-3 km) - No extra charge</option>
             <option value="medium">Medium (3-8 km) - ₹30 delivery charge</option>
             <option value="far">Far (8+ km) - ₹60 delivery charge</option>
         </select>
+
+        <p id="delivery-estimate" style="margin:8px 0; font-weight:600; color:#e76f51;"></p>
 
         <label>Payment Method</label>
         <select name="payment_method" required>
@@ -35,4 +37,20 @@
         <button type="submit" class="btn" style="width:100%;">Place Order</button>
     </form>
 </div>
+
+<script>
+function updateDeliveryEstimate() {
+    const zone = document.getElementById('distance_zone').value;
+    const daysMap = { near: 1, medium: 3, far: 5 };
+    const days = daysMap[zone] || 3;
+
+    const today = new Date();
+    today.setDate(today.getDate() + days);
+    const options = { weekday: 'short', day: 'numeric', month: 'short' };
+    const formatted = today.toLocaleDateString('en-IN', options);
+
+    document.getElementById('delivery-estimate').textContent = 'Estimated delivery by ' + formatted;
+}
+window.onload = updateDeliveryEstimate;
+</script>
 {% endblock %}
