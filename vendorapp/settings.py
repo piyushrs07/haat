@@ -104,15 +104,4 @@ ADMIN_EMAIL = 'rajsinghpiyush07@gmail.com'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Image storage.
-# On Render the disk is wiped on every deploy/restart and Django does not serve
-# /media/ when DEBUG=False, so uploaded photos show up broken. When CLOUDINARY_URL
-# is set (production) we store uploads on Cloudinary instead.
-if os.environ.get('CLOUDINARY_URL'):
-    INSTALLED_APPS = ['cloudinary_storage'] + INSTALLED_APPS + ['cloudinary']
-    STORAGES = {
-        'default': {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'},
-        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
-    }
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
