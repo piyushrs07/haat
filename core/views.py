@@ -1,15 +1,18 @@
 import random
+import logging
 from datetime import timedelta
 
+import requests
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
-from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 
 from .models import Customer, Seller, Product, ProductImage, Order, Review, ShopReview, Wishlist, Message, Complaint
 from django.http import HttpResponse
+
+logger = logging.getLogger(__name__)
 
 
 # ---------- Helper functions ----------
@@ -18,17 +21,55 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 
+def _send_via_brevo(to_email, subject, message):
+    """
+    Sends email through Brevo's HTTPS API instead of SMTP, because Render's
+    free web services block outbound SMTP ports (25/465/587) as of Sept 2025.
+    Returns True on success, False on failure (never raises).
+    """
+    if not settings.BREVO_API_KEY:
+        logger.error("BREVO_API_KEY is not set — email not sent to %s", to_email)
+        return False
+
+    # DEFAULT_FROM_EMAIL looks like "Haat <marketplacehaat@gmail.com>" — split it
+    from_name, from_email = "Haat", settings.DEFAULT_FROM_EMAIL
+    if '<' in settings.DEFAULT_FROM_EMAIL and '>' in settings.DEFAULT_FROM_EMAIL:
+        from_name = settings.DEFAULT_FROM_EMAIL.split('<')[0].strip()
+        from_email = settings.DEFAULT_FROM_EMAIL.split('<')[1].split('>')[0].strip()
+
+    try:
+        response = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'api-key': settings.BREVO_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            json={
+                'sender': {'name': from_name, 'email': from_email},
+                'to': [{'email': to_email}],
+                'subject': subject,
+                'textContent': message,
+            },
+            timeout=10,
+        )
+        if response.status_code >= 400:
+            logger.error("Brevo send failed (%s) to %s: %s", response.status_code, to_email, response.text)
+            return False
+        return True
+    except requests.RequestException as exc:
+        logger.error("Brevo send raised an exception for %s: %s", to_email, exc)
+        return False
+
+
 def send_otp_email(to_email, name, otp):
     subject = 'Your Haat verification code'
     message = f'Hi {name},\n\nYour verification code is: {otp}\n\nThis code expires in 10 minutes.\n\n- Haat'
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=False)
+    return _send_via_brevo(to_email, subject, message)
 
 
 def send_notification_email(to_email, subject, message):
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=True)
-    except Exception:
-        pass
+    return _send_via_brevo(to_email, subject, message)
 
 
 def send_admin_notification(subject, message):
@@ -80,10 +121,13 @@ def register_customer(request):
             otp_code=otp,
             otp_created_at=timezone.now(),
         )
-        send_otp_email(email, name, otp)
+        email_sent = send_otp_email(email, name, otp)
 
         request.session['pending_customer_id'] = customer.id
-        messages.success(request, 'A verification code has been sent to your email.')
+        if email_sent:
+            messages.success(request, 'A verification code has been sent to your email.')
+        else:
+            messages.warning(request, 'We could not send the verification email right now. Please try "Resend code" in a moment, or contact support if this keeps happening.')
         return redirect('verify_customer_otp')
 
     return render(request, 'core/register_customer.html')
@@ -134,8 +178,11 @@ def resend_customer_otp(request):
     customer.otp_code = otp
     customer.otp_created_at = timezone.now()
     customer.save()
-    send_otp_email(customer.email, customer.name, otp)
-    messages.success(request, 'A new code has been sent to your email.')
+    email_sent = send_otp_email(customer.email, customer.name, otp)
+    if email_sent:
+        messages.success(request, 'A new code has been sent to your email.')
+    else:
+        messages.warning(request, 'We could not send the verification email right now. Please try again in a moment.')
     return redirect('verify_customer_otp')
 
 
@@ -176,10 +223,13 @@ def register_seller(request):
             otp_code=otp,
             otp_created_at=timezone.now(),
         )
-        send_otp_email(email, name, otp)
+        email_sent = send_otp_email(email, name, otp)
 
         request.session['pending_seller_id'] = seller.id
-        messages.success(request, 'A verification code has been sent to your email.')
+        if email_sent:
+            messages.success(request, 'A verification code has been sent to your email.')
+        else:
+            messages.warning(request, 'We could not send the verification email right now. Please try "Resend code" in a moment, or contact support if this keeps happening.')
         return redirect('verify_seller_otp')
 
     return render(request, 'core/register_seller.html')
@@ -229,8 +279,11 @@ def resend_seller_otp(request):
     seller.otp_code = otp
     seller.otp_created_at = timezone.now()
     seller.save()
-    send_otp_email(seller.email, seller.name, otp)
-    messages.success(request, 'A new code has been sent to your email.')
+    email_sent = send_otp_email(seller.email, seller.name, otp)
+    if email_sent:
+        messages.success(request, 'A new code has been sent to your email.')
+    else:
+        messages.warning(request, 'We could not send the verification email right now. Please try again in a moment.')
     return redirect('verify_seller_otp')
 
 

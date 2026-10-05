@@ -87,13 +87,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Email settings - for sending OTP codes and notifications
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'marketplacehaat@gmail.com'
-EMAIL_HOST_PASSWORD = 'bliwevlixvfdotpj'
-DEFAULT_FROM_EMAIL = 'Haat <marketplacehaat@gmail.com>'
+#
+# NOTE: Render's free web services block outbound SMTP (ports 25/465/587)
+# as of Sept 2025, so Gmail SMTP cannot be used from this deployment.
+# Emails are sent through Brevo's HTTPS API instead (works fine on the
+# free tier since it's a normal web request, not an SMTP connection).
+# Sign up free at https://www.brevo.com, verify a sender email, create an
+# API key under Settings > SMTP & API > API Keys, and set it as the
+# BREVO_API_KEY environment variable on Render.
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Haat <marketplacehaat@gmail.com>')
 
 # Your email, to receive admin notifications (new seller/customer registrations)
 ADMIN_EMAIL = 'rajsinghpiyush07@gmail.com'
