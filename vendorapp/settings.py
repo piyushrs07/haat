@@ -8,11 +8,12 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-u_aq05@_fpq+5go)l1z_rg@q5k!c+f$(wox&)cgxivf#4*cmfu'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-u_aq05@_fpq+5go)l1z_rg@q5k!c+f$(wox&)cgxivf#4*cmfu')
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -47,6 +48,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.notifications',
             ],
         },
     },
@@ -84,7 +86,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Uploaded photos are stored in the database (see core/storage.py) because
+# Render's free disk is wiped on every redeploy. Static files stay as before.
+STORAGES = {
+    'default': {'BACKEND': 'core.storage.DatabaseStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
 
 # Email settings - for sending OTP codes and notifications
 #

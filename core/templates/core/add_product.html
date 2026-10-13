@@ -19,10 +19,26 @@
         <input type="text" name="category" required>
 
         <label>Main Product Photo</label>
-        <input type="file" name="photo" accept="image/*" capture="environment">
+        <div class="upload-buttons">
+            <label class="upload-btn">🖼️ Choose from Gallery
+                <input type="file" name="photo" accept="image/*" data-preview="main-preview" hidden>
+            </label>
+            <label class="upload-btn">📷 Take Photo
+                <input type="file" name="photo_camera" accept="image/*" capture="environment" data-preview="main-preview" hidden>
+            </label>
+        </div>
+        <div id="main-preview" class="preview-row"></div>
 
-        <label>Additional Photos (optional, up to 3-4)</label>
-        <input type="file" name="images" accept="image/*" capture="environment" multiple>
+        <label>Additional Photos (optional)</label>
+        <div class="upload-buttons">
+            <label class="upload-btn">🖼️ Choose from Gallery
+                <input type="file" name="images" accept="image/*" multiple data-preview="extra-preview" hidden>
+            </label>
+            <label class="upload-btn">📷 Take Photo
+                <input type="file" name="images_camera" accept="image/*" capture="environment" data-preview="extra-preview" hidden>
+            </label>
+        </div>
+        <div id="extra-preview" class="preview-row"></div>
 
         <button type="submit" class="btn" style="width:100%;">Add Product</button>
     </form>

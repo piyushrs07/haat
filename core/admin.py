@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer, Seller, Product, Order, Review, Message, Wishlist, Complaint
+from .models import Customer, Seller, Product, Order, Review, Message, Wishlist, Complaint, Notification
 
 admin.site.site_header = "Haat Admin"
 admin.site.site_title = "Haat Admin Portal"
@@ -13,3 +13,4 @@ admin.site.register(Review)
 admin.site.register(Message)
 admin.site.register(Wishlist)
 admin.site.register(Complaint)
+admin.site.register(Notification)

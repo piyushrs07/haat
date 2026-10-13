@@ -35,5 +35,14 @@ urlpatterns = [
     path('seller/product/delete/<int:product_id>/', views.delete_product, name='delete_product'),
     path('seller/delete-account/', views.delete_seller_account, name='delete_seller_account'),
     path('order/<int:order_id>/complaint/', views.file_complaint, name='file_complaint'),
-    path('my-orders/', views.my_orders, name='my_orders')
+    path('my-orders/', views.my_orders, name='my_orders'),
+
+    # Notifications (bell icon)
+    path('notifications/', views.notifications_view, name='notifications'),
+
+    # Remove one gallery photo from a product
+    path('seller/product-image/delete/<int:image_id>/', views.delete_product_image, name='delete_product_image'),
+
+    # Photos stored in the database (replaces the disk-based /media/ route)
+    path('media/<path:path>', views.serve_media, name='serve_media'),
 ]

@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% block title %}Alerts - Haat{% endblock %}
+
+{% block content %}
+<h2 class="section-title" style="margin-top:0;">🔔 Your Alerts</h2>
+<div class="notif-list">
+    {% for n in items %}
+        <a class="notif {% if not n.is_read %}notif-new{% endif %}" href="{{ n.link|default:'#' }}">
+            <span>{{ n.message }}</span>
+            <small>{{ n.created_at|timesince }} ago</small>
+        </a>
+    {% empty %}
+        <p class="empty">No alerts yet. You'll see new orders, messages and updates here.</p>
+    {% endfor %}
+</div>
+{% endblock %}

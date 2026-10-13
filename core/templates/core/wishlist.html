@@ -7,7 +7,7 @@
 <div class="grid">
     {% for item in wishlist_items %}
     <div class="card product-card">
-        <div class="product-img">{{ item.product.name|slice:":1"|upper }}</div>
+        <div class="product-img"><span class="initial">{{ item.product.name|slice:":1"|upper }}</span>{% if item.product.photo %}<img src="{{ item.product.photo.url }}" alt="{{ item.product.name }}" loading="lazy" onerror="this.remove()">{% endif %}</div>
         <div class="product-body">
             <span class="tag">{{ item.product.category }}</span>
             <h3 class="product-name">{{ item.product.name }}</h3>

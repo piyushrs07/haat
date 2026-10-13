@@ -1,5 +1,6 @@
 import random
 import logging
+import threading
 from datetime import timedelta
 
 import requests
@@ -9,8 +10,9 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.conf import settings
 from django.utils import timezone
 
-from .models import Customer, Seller, Product, ProductImage, Order, Review, ShopReview, Wishlist, Message, Complaint
-from django.http import HttpResponse
+from .models import (Customer, Seller, Product, ProductImage, Order, Review, ShopReview,
+                     Wishlist, Message, Complaint, StoredFile, Notification)
+from django.http import HttpResponse, Http404
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,30 @@ def send_otp_email(to_email, name, otp):
 
 
 def send_notification_email(to_email, subject, message):
-    return _send_via_brevo(to_email, subject, message)
+    """Fire-and-forget: sends in a background thread so pages never wait on email."""
+    threading.Thread(target=_send_via_brevo, args=(to_email, subject, message), daemon=True).start()
+    return True
+
+
+def notify(recipient_type, recipient_id, message, link=''):
+    """Creates an in-app notification (the bell icon). Never breaks the page if it fails."""
+    try:
+        Notification.objects.create(
+            recipient_type=recipient_type,
+            recipient_id=recipient_id,
+            message=message[:255],
+            link=link,
+        )
+    except Exception as exc:
+        logger.error("Could not create notification: %s", exc)
+
+
+def current_recipient(request):
+    if request.session.get('customer_id'):
+        return 'customer', request.session['customer_id']
+    if request.session.get('seller_id'):
+        return 'seller', request.session['seller_id']
+    return None, None
 
 
 def send_admin_notification(subject, message):
@@ -87,7 +112,47 @@ def otp_is_valid(otp_created_at):
 # ---------- Home ----------
 
 def home(request):
-    return render(request, 'core/home.html')
+    available = Product.objects.filter(is_available=True)
+    latest = available.select_related('seller').order_by('-id')[:6]
+    categories = []
+    for c in available.values_list('category', flat=True):
+        c = (c or '').strip()
+        if c and c.lower() not in [x.lower() for x in categories]:
+            categories.append(c)
+        if len(categories) >= 8:
+            break
+    return render(request, 'core/home.html', {
+        'latest_products': latest,
+        'categories': categories,
+        'product_count': available.count(),
+        'seller_count': Seller.objects.filter(is_approved=True, is_suspended=False).count(),
+    })
+
+
+# ---------- Media (photos stored in the database) ----------
+
+def serve_media(request, path):
+    try:
+        stored = StoredFile.objects.get(name=path)
+    except StoredFile.DoesNotExist:
+        raise Http404("File not found")
+    response = HttpResponse(bytes(stored.data), content_type=stored.content_type)
+    response['Cache-Control'] = 'public, max-age=86400'
+    return response
+
+
+# ---------- In-app notifications ----------
+
+def notifications_view(request):
+    recipient_type, recipient_id = current_recipient(request)
+    if not recipient_type:
+        return redirect('home')
+    items = list(Notification.objects.filter(
+        recipient_type=recipient_type, recipient_id=recipient_id)[:50])
+    Notification.objects.filter(
+        recipient_type=recipient_type, recipient_id=recipient_id, is_read=False
+    ).update(is_read=True)
+    return render(request, 'core/notifications.html', {'items': items})
 
 
 # ---------- Customer registration + OTP ----------
@@ -160,6 +225,7 @@ def verify_customer_otp(request):
             )
 
             request.session['customer_id'] = customer.id
+            notify('customer', customer.id, 'Welcome to Haat! Browse local shops and place your first order.', '/products/')
             messages.success(request, 'Email verified! Welcome to Haat.')
             return redirect('product_list')
 
@@ -359,8 +425,8 @@ def add_product(request):
         description = request.POST.get('description')
         price = request.POST.get('price')
         category = request.POST.get('category')
-        photo = request.FILES.get('photo')
-        extra_images = request.FILES.getlist('images')
+        photo = request.FILES.get('photo') or request.FILES.get('photo_camera')
+        extra_images = request.FILES.getlist('images') + request.FILES.getlist('images_camera')
 
         product = Product.objects.create(
             seller=seller,
@@ -412,11 +478,12 @@ def edit_product(request, product_id):
         product.description = request.POST.get('description')
         product.price = request.POST.get('price')
         product.category = request.POST.get('category')
-        if request.FILES.get('photo'):
-            product.photo = request.FILES.get('photo')
+        new_photo = request.FILES.get('photo') or request.FILES.get('photo_camera')
+        if new_photo:
+            product.photo = new_photo
         product.save()
 
-        extra_images = request.FILES.getlist('images')
+        extra_images = request.FILES.getlist('images') + request.FILES.getlist('images_camera')
         for img in extra_images:
             ProductImage.objects.create(product=product, image=img)
 
@@ -424,6 +491,20 @@ def edit_product(request, product_id):
         return redirect('seller_dashboard')
 
     return render(request, 'core/edit_product.html', {'product': product})
+
+
+def delete_product_image(request, image_id):
+    seller_id = request.session.get('seller_id')
+    if not seller_id:
+        return redirect('login_seller')
+
+    image = ProductImage.objects.get(id=image_id, product__seller_id=seller_id)
+    product_id = image.product_id
+    if request.method == 'POST':
+        image.image.delete(save=False)
+        image.delete()
+        messages.success(request, 'Photo removed.')
+    return redirect('edit_product', product_id=product_id)
 
 
 def delete_product(request, product_id):
@@ -488,6 +569,13 @@ def place_order(request, product_id):
             f'Check your seller dashboard for details.'
         )
 
+        notify('seller', product.seller.id,
+               f'New order: {customer.name} ordered {quantity} x {product.name} (Rs. {total_price}).',
+               '/seller/dashboard/')
+        notify('customer', customer.id,
+               f'Your order for {product.name} was placed. Estimated delivery: {estimated_delivery_date:%d %b}.',
+               '/my-orders/')
+
         messages.success(request, 'Order placed successfully!')
         return redirect('my_orders')
 
@@ -527,6 +615,10 @@ def update_order_status(request, order_id):
             f'Your Haat order #{order.id} status: {order.get_status_display()}',
             f'Hi {order.customer.name}, your order for {order.product.name} is now "{order.get_status_display()}".'
         )
+
+        notify('customer', order.customer.id,
+               f'Order #{order.id} ({order.product.name}) is now: {order.get_status_display()}.',
+               '/my-orders/')
 
         messages.success(request, f'Order #{order.id} status updated.')
 
@@ -570,6 +662,10 @@ def add_review(request, product_id):
             f'New review on {product.name}',
             f'{customer.name} left a {rating}-star review on {product.name}: "{comment}"'
         )
+
+        notify('seller', product.seller.id,
+               f'{customer.name} left a {rating}-star review on {product.name}.',
+               '/seller/dashboard/')
 
         messages.success(request, 'Review submitted, thank you!')
         return redirect('product_list')
@@ -653,6 +749,7 @@ def chat_with_seller(request, seller_id):
             sender='customer',
             content=content
         )
+        notify('seller', seller.id, f'New message from {customer.name}.', f'/messages/customer/{customer.id}/')
         return redirect('chat_with_seller', seller_id=seller_id)
 
     chat_messages = Message.objects.filter(customer=customer, seller=seller).order_by('created_at')
@@ -679,6 +776,7 @@ def chat_with_customer(request, customer_id):
             sender='seller',
             content=content
         )
+        notify('customer', customer.id, f'New message from {seller.shop_name}.', f'/messages/seller/{seller.id}/')
         return redirect('chat_with_customer', customer_id=customer_id)
 
     chat_messages = Message.objects.filter(customer=customer, seller=seller).order_by('created_at')
@@ -733,6 +831,10 @@ def file_complaint(request, order_id):
             f'Complaint filed on order #{order.id}',
             f'{customer.name} filed a complaint on order #{order.id} ({order.product.name}): "{description}"'
         )
+
+        notify('seller', order.product.seller.id,
+               f'Complaint filed by {customer.name} on order #{order.id} ({order.product.name}).',
+               '/seller/dashboard/')
 
         messages.success(request, 'Complaint filed. We will look into it.')
         return redirect('my_orders')

@@ -174,3 +174,30 @@ class Complaint(models.Model):
 
     def __str__(self):
         return f"Complaint on Order #{self.order.id}"
+
+
+class StoredFile(models.Model):
+    """An uploaded file (product photo) kept in the database so it survives redeploys."""
+    name = models.CharField(max_length=255, unique=True)
+    content_type = models.CharField(max_length=100, default='application/octet-stream')
+    data = models.BinaryField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Notification(models.Model):
+    """In-app notification shown under the bell icon (works even if email is down)."""
+    recipient_type = models.CharField(max_length=10)   # 'customer' or 'seller'
+    recipient_id = models.PositiveIntegerField()
+    message = models.CharField(max_length=255)
+    link = models.CharField(max_length=200, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.recipient_type} #{self.recipient_id}: {self.message}'

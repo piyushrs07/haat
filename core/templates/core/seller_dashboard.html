@@ -19,11 +19,7 @@
 <div class="grid">
     {% for product in products %}
     <div class="card product-card">
-        {% if product.photo %}
-            <div class="product-img" style="background:none; padding:0;"><img src="{{ product.photo.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;"></div>
-        {% else %}
-            <div class="product-img">{{ product.name|slice:":1"|upper }}</div>
-        {% endif %}
+        <div class="product-img"><span class="initial">{{ product.name|slice:":1"|upper }}</span>{% if product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" loading="lazy" onerror="this.remove()">{% endif %}</div>
         <div class="product-body">
             <span class="tag">{{ product.category }}</span>
             <h3 class="product-name">{{ product.name }}</h3>

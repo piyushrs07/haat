@@ -6,13 +6,19 @@
     <h2 class="section-title" style="margin-top:0;">Edit Product</h2>
 
     {% if product.photo %}
-        <img src="{{ product.photo.url }}" alt="{{ product.name }}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:14px;">
+        <img src="{{ product.photo.url }}" alt="{{ product.name }}" onerror="this.remove()" style="width:100%; max-height:220px; object-fit:cover; border-radius:8px; margin-bottom:14px;">
     {% endif %}
 
     {% if product.images.all %}
-        <div style="display:flex; gap:8px; overflow-x:auto; margin-bottom:14px;">
+        <div class="gallery-edit">
             {% for img in product.images.all %}
-                <img src="{{ img.image.url }}" alt="Extra photo" style="width:70px; height:70px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+                <div class="gallery-item">
+                    <img src="{{ img.image.url }}" alt="Extra photo" onerror="this.parentNode.remove()">
+                    <form method="POST" action="/seller/product-image/delete/{{ img.id }}/">
+                        {% csrf_token %}
+                        <button type="submit" class="gallery-x" title="Remove this photo">×</button>
+                    </form>
+                </div>
             {% endfor %}
         </div>
     {% endif %}
@@ -32,10 +38,26 @@
         <input type="text" name="category" value="{{ product.category }}" required>
 
         <label>Replace Main Photo (leave empty to keep current)</label>
-        <input type="file" name="photo" accept="image/*" capture="environment">
+        <div class="upload-buttons">
+            <label class="upload-btn">🖼️ Choose from Gallery
+                <input type="file" name="photo" accept="image/*" data-preview="main-preview" hidden>
+            </label>
+            <label class="upload-btn">📷 Take Photo
+                <input type="file" name="photo_camera" accept="image/*" capture="environment" data-preview="main-preview" hidden>
+            </label>
+        </div>
+        <div id="main-preview" class="preview-row"></div>
 
         <label>Add More Photos (optional)</label>
-        <input type="file" name="images" accept="image/*" capture="environment" multiple>
+        <div class="upload-buttons">
+            <label class="upload-btn">🖼️ Choose from Gallery
+                <input type="file" name="images" accept="image/*" multiple data-preview="extra-preview" hidden>
+            </label>
+            <label class="upload-btn">📷 Take Photo
+                <input type="file" name="images_camera" accept="image/*" capture="environment" data-preview="extra-preview" hidden>
+            </label>
+        </div>
+        <div id="extra-preview" class="preview-row"></div>
 
         <button type="submit" class="btn" style="width:100%;">Save Changes</button>
     </form>

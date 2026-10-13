@@ -1,22 +1,23 @@
 {% extends 'core/base.html' %}
+{% block title %}Verify Email - Haat{% endblock %}
+
 {% block content %}
-<div style="max-width: 400px; margin: 40px auto; padding: 24px; background: white; border-radius: 8px;">
-    <h2 style="margin-bottom: 8px;">Verify Your Email</h2>
-    <p style="color: #555; margin-bottom: 20px;">We sent a 6-digit code to <strong>{{ email }}</strong></p>
+<div class="form-box" style="text-align:center;">
+    <span class="step-icon">✉️</span>
+    <h2 class="section-title" style="margin-top:0;">Verify Your Email</h2>
+    <p style="color:#555; margin-bottom:20px;">We sent a 6-digit code to <strong>{{ email }}</strong>.<br>
+    <small>Can't see it? Check your Spam or Promotions folder.</small></p>
 
     <form method="POST">
         {% csrf_token %}
         <label>Enter Code</label>
-        <input type="text" name="otp" maxlength="6" required
-               style="width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 4px; font-size: 18px; letter-spacing: 4px;">
-        <button type="submit"
-                style="width: 100%; padding: 12px; background: #e76f51; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
-            Verify
-        </button>
+        <input type="text" name="otp" maxlength="6" required inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}"
+               style="text-align:center; font-size:1.4rem; letter-spacing:6px;">
+        <button type="submit" class="btn" style="width:100%;">Verify</button>
     </form>
 
-    <form method="GET" action="{% if 'seller' in request.path %}{% url 'resend_seller_otp' %}{% else %}{% url 'resend_customer_otp' %}{% endif %}" style="margin-top: 16px; text-align: center;">
-        <button type="submit" style="background: none; border: none; color: #e76f51; text-decoration: underline; cursor: pointer;">
+    <form method="GET" action="{% if 'seller' in request.path %}{% url 'resend_seller_otp' %}{% else %}{% url 'resend_customer_otp' %}{% endif %}" style="margin-top:16px;">
+        <button type="submit" style="background:none; border:none; color:#e76f51; text-decoration:underline; cursor:pointer; font-size:1rem;">
             Resend Code
         </button>
     </form>

@@ -1,11 +1,94 @@
 {% extends 'core/base.html' %}
+{% block title %}Haat - Shop Local, Support Small Businesses{% endblock %}
 
 {% block content %}
 <section class="hero">
-    <h1>Shop Local. Support Small Businesses.</h1>
-    <p>Your neighborhood market, now online.</p>
-    <a class="btn" href="/products/">Browse Products</a>
-    <a class="btn btn-light" href="/register/customer/">Join as Customer</a>
-    <a class="btn btn-light" href="/register/seller/">Become a Seller</a>
+    <span class="hero-tag">📍 Local Market · Goa</span>
+    <h1>Shop Local.<br>Support Small Businesses.</h1>
+    <p>Discover products from sellers in your neighbourhood and get them delivered to your door.</p>
+    <div class="hero-actions">
+        <a class="btn btn-lg" href="/products/">Browse Products</a>
+        {% if request.session.customer_id %}
+            <a class="btn btn-light btn-lg" href="/my-orders/">My Orders</a>
+            <a class="btn btn-outline btn-lg" href="/logout/">Logout</a>
+        {% elif request.session.seller_id %}
+            <a class="btn btn-light btn-lg" href="/seller/dashboard/">My Dashboard</a>
+            <a class="btn btn-outline btn-lg" href="/logout/">Logout</a>
+        {% else %}
+            <a class="btn btn-light btn-lg" href="/register/customer/">Join as Customer</a>
+            <a class="btn btn-outline btn-lg" href="/register/seller/">Become a Seller</a>
+        {% endif %}
+    </div>
+    {% if not request.session.customer_id and not request.session.seller_id %}
+        <p class="hero-login">Already registered? <a href="/login/customer/">Customer login</a> &middot; <a href="/login/seller/">Seller login</a></p>
+    {% endif %}
 </section>
+
+<section class="stats-strip">
+    <div><b>{{ product_count }}</b><span>Products</span></div>
+    <div><b>{{ seller_count }}</b><span>Local Shops</span></div>
+    <div><b>1–5</b><span>Days Delivery</span></div>
+</section>
+
+{% if not request.session.customer_id and not request.session.seller_id %}
+<h2 class="section-title center">Join Haat</h2>
+<section class="join-grid">
+    <div class="join-card">
+        <span class="step-icon">🛍️</span>
+        <h3>I want to shop</h3>
+        <p>Create a customer account to order from local shops, save favourites and track your deliveries.</p>
+        <a class="btn" href="/register/customer/">Register as Customer</a>
+        <a class="join-login" href="/login/customer/">Customer login</a>
+    </div>
+    <div class="join-card join-seller">
+        <span class="step-icon">🏪</span>
+        <h3>I want to sell</h3>
+        <p>Open your shop on Haat, list products with photos and reach customers in your area.</p>
+        <a class="btn" href="/register/seller/">Register your Shop</a>
+        <a class="join-login" href="/login/seller/">Seller login</a>
+    </div>
+</section>
+{% endif %}
+
+<h2 class="section-title center">How Haat Works</h2>
+<section class="steps">
+    <div class="step"><span class="step-icon">🔍</span><h3>Browse</h3><p>Search and filter products from shops near you.</p></div>
+    <div class="step"><span class="step-icon">🛒</span><h3>Order</h3><p>Pick a delivery distance and place your order in one step.</p></div>
+    <div class="step"><span class="step-icon">🚚</span><h3>Get it delivered</h3><p>Track the status and rate the shop when it arrives.</p></div>
+</section>
+
+{% if categories %}
+<h2 class="section-title center">Shop by Category</h2>
+<section class="chips">
+    {% for c in categories %}
+        <a class="chip" href="/products/?category={{ c|urlencode }}">{{ c }}</a>
+    {% endfor %}
+</section>
+{% endif %}
+
+{% if latest_products %}
+<h2 class="section-title center">Fresh from Local Shops</h2>
+<div class="grid">
+    {% for product in latest_products %}
+    <a class="card product-card" href="/products/?search={{ product.name|urlencode }}" style="text-decoration:none; color:inherit;">
+        <div class="product-img"><span class="initial">{{ product.name|slice:":1"|upper }}</span>{% if product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" loading="lazy" onerror="this.remove()">{% endif %}</div>
+        <div class="product-body">
+            <span class="tag">{{ product.category }}</span>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="price">₹{{ product.price }}</p>
+            <p class="seller-line">{{ product.seller.shop_name }}</p>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+<p class="center" style="margin-top:20px;"><a class="btn btn-ghost" href="/products/">See all products →</a></p>
+{% endif %}
+
+{% if request.session.customer_id %}
+<section class="cta-band">
+    <h2>Run a small business?</h2>
+    <p>You can open a shop on Haat too. It takes a few minutes to get started.</p>
+    <a class="btn btn-light btn-lg" href="/register/seller/">Become a Seller</a>
+</section>
+{% endif %}
 {% endblock %}
