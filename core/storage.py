@@ -8,7 +8,6 @@ showing up blank. Here the photos are stored inside the database instead
 Photos are also resized (max 1200px) and compressed on upload.
 """
 import io
-import mimetypes
 import os
 
 from django.conf import settings
@@ -16,6 +15,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.utils.deconstruct import deconstructible
 from PIL import Image, ImageOps
+
+Image.MAX_IMAGE_PIXELS = 40_000_000   # refuse decompression bombs (a 40 MP phone photo is fine)
 
 
 @deconstructible
@@ -30,7 +31,9 @@ class DatabaseStorage(Storage):
         return ContentFile(bytes(obj.data), name=name)
 
     def _optimize(self, raw, name):
-        """Fix phone-camera rotation, shrink and compress. Falls back to raw bytes."""
+        """Fix phone-camera rotation, shrink and compress to JPEG.
+        Anything that is not a real image is rejected (it used to be stored as-is and
+        served back from our own domain, which allowed uploading HTML/JS)."""
         try:
             img = Image.open(io.BytesIO(raw))
             img = ImageOps.exif_transpose(img)
@@ -46,9 +49,8 @@ class DatabaseStorage(Storage):
             img.save(buffer, 'JPEG', quality=82, optimize=True)
             new_name = os.path.splitext(name)[0] + '.jpg'
             return buffer.getvalue(), 'image/jpeg', new_name
-        except Exception:
-            content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
-            return raw, content_type, name
+        except Exception as exc:
+            raise ValueError(f'Not a valid image: {name}') from exc
 
     def _save(self, name, content):
         content.seek(0)

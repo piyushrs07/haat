@@ -1,0 +1,45 @@
+# Optional Render Blueprint. Use it for a NEW service ("New +" -> "Blueprint"), or copy the same
+# settings by hand into an existing service (Settings -> Build & Deploy / Environment).
+services:
+  - type: web
+    name: haat
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: ./build.sh
+    startCommand: gunicorn vendorapp.wsgi:application --workers 2 --threads 4 --timeout 60 --access-logfile - --log-file -
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.3
+      - key: SECRET_KEY
+        generateValue: true          # Render creates a long random value once and keeps it
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        sync: false                  # paste your Postgres connection string when prompted
+      - key: BREVO_API_KEY
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false                  # e.g.  Haat <orders@yourdomain.com>  (sender must be verified in Brevo)
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+# To let Render create the database too, uncomment, and replace the DATABASE_URL entry above with:
+#   - key: DATABASE_URL
+#     fromDatabase: { name: haat-db, property: connectionString }
+# NOTE: Render's FREE Postgres EXPIRES 30 DAYS after creation and has no backups. Because this app
+# stores product photos in the database, use a paid plan (or an external DB + regular backups).
+#
+# databases:
+#   - name: haat-db
+#     plan: free            # change to "basic-256mb" or higher for anything real
+#     databaseName: haat
+#     user: haat

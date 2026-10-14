@@ -1,0 +1,6 @@
+{% if errors %}
+<div class="error-box" role="alert">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% if login_link %}<a href="{{ login_url }}">Go to login</a>{% endif %}
+</div>
+{% endif %}

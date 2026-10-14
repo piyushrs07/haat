@@ -10,16 +10,15 @@
 
     <form method="POST">
         {% csrf_token %}
-        <label>Enter Code</label>
-        <input type="text" name="otp" maxlength="6" required inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}"
+        <label for="otp">Enter Code</label>
+        <input id="otp" type="text" name="otp" maxlength="6" required inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}"
                style="text-align:center; font-size:1.4rem; letter-spacing:6px;">
         <button type="submit" class="btn" style="width:100%;">Verify</button>
     </form>
 
-    <form method="GET" action="{% if 'seller' in request.path %}{% url 'resend_seller_otp' %}{% else %}{% url 'resend_customer_otp' %}{% endif %}" style="margin-top:16px;">
-        <button type="submit" style="background:none; border:none; color:#e76f51; text-decoration:underline; cursor:pointer; font-size:1rem;">
-            Resend Code
-        </button>
+    <form method="POST" action="{% if role == 'seller' %}{% url 'resend_seller_otp' %}{% else %}{% url 'resend_customer_otp' %}{% endif %}" style="margin-top:16px;">
+        {% csrf_token %}
+        <button type="submit" class="link-btn">Resend Code</button>
     </form>
 </div>
 {% endblock %}

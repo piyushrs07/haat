@@ -4,14 +4,14 @@
 {% block content %}
 <div class="form-box">
     <h2 class="section-title" style="margin-top:0;">Customer Login</h2>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
     <form method="POST">
         {% csrf_token %}
-        <label>Email</label>
-        <input type="email" name="email" required>
+        <label for="f-email">Email</label>
+        <input id="f-email" type="email" name="email" autocomplete="email" autocapitalize="none" required>
 
-        <label>Password</label>
-        <input type="password" name="password" required>
+        <label for="f-password">Password</label>
+        <input id="f-password" type="password" name="password" autocomplete="current-password" required>
 
         <button type="submit" class="btn" style="width:100%;">Login</button>
     </form>

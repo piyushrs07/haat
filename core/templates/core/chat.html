@@ -5,7 +5,7 @@
 <div style="max-width:640px; margin:0 auto;">
     <h2 class="section-title" style="margin-top:0;">Chat with {{ chat_title }}</h2>
 
-    <div class="chat-box">
+    <div class="chat-box" id="chat-box">
         {% for msg in chat_messages %}
             <div class="bubble {% if msg.sender == me %}mine{% endif %}">{{ msg.content }}</div>
         {% empty %}
@@ -15,7 +15,7 @@
 
     <form method="POST" class="chat-form">
         {% csrf_token %}
-        <input type="text" name="content" placeholder="Type your message" required>
+        <input type="text" name="content" placeholder="Type your message" maxlength="1000" autocomplete="off" required>
         <button type="submit" class="btn">Send</button>
     </form>
 </div>

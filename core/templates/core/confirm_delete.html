@@ -7,8 +7,8 @@
     <p style="margin-bottom:18px;">{{ message }}</p>
     <form method="POST">
         {% csrf_token %}
-        <button type="submit" class="btn" style="background:#c0392b;">Yes, delete</button>
-        <a class="btn btn-ghost" href="{{ cancel_url }}">Cancel</a>
+        {% if not disable_confirm %}<button type="submit" class="btn btn-danger">Yes, delete</button>{% endif %}
+        <a class="btn btn-ghost" href="{{ cancel_url }}">{% if disable_confirm %}Back{% else %}Cancel{% endif %}</a>
     </form>
 </div>
 {% endblock %}

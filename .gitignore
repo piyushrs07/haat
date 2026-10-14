@@ -1,9 +1,20 @@
+# Python
 venv/
+.venv/
 env/
 *.pyc
 __pycache__/
+
+# Local data / secrets
 db.sqlite3
-media/
-staticfiles/
-.vscode/
+.env
 *.log
+media/
+
+# Built by `collectstatic` on Render
+staticfiles/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

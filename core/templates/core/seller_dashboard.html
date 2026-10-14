@@ -21,7 +21,7 @@
     <div class="card product-card">
         <div class="product-img"><span class="initial">{{ product.name|slice:":1"|upper }}</span>{% if product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" loading="lazy" onerror="this.remove()">{% endif %}</div>
         <div class="product-body">
-            <span class="tag">{{ product.category }}</span>
+            <span class="tag">{{ product.category }}</span>{% if not product.is_available %} <span class="badge badge-cancelled">Hidden</span>{% endif %}
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="price">₹{{ product.price }}</p>
             <div class="card-actions">

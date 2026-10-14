@@ -10,11 +10,13 @@
 
 <h2 class="section-title" style="margin-top:0;">Browse Products</h2>
 
+{% for n in notices %}<div class="alert alert-warning" role="alert">{{ n }}</div>{% endfor %}
+
 <form method="GET" class="filter-bar">
-    <input type="text" name="search" placeholder="Search by name" value="{{ request.GET.search }}">
-    <input type="text" name="category" placeholder="Category" value="{{ request.GET.category }}">
-    <input type="number" name="min_price" placeholder="Min ₹" value="{{ request.GET.min_price }}">
-    <input type="number" name="max_price" placeholder="Max ₹" value="{{ request.GET.max_price }}">
+    <input type="search" name="search" placeholder="Search by name" value="{{ request.GET.search }}" aria-label="Search by name">
+    <input type="text" name="category" placeholder="Category" value="{{ request.GET.category }}" aria-label="Category">
+    <input type="number" inputmode="decimal" min="0" step="any" name="min_price" placeholder="Min ₹" value="{{ request.GET.min_price }}" aria-label="Minimum price">
+    <input type="number" inputmode="decimal" min="0" step="any" name="max_price" placeholder="Max ₹" value="{{ request.GET.max_price }}" aria-label="Maximum price">
     <button type="submit" class="btn btn-sm">Filter</button>
     <a href="/products/">Clear</a>
 </form>
@@ -27,7 +29,7 @@
         {% if product.images.all %}
         <div class="thumb-row">
             {% for img in product.images.all %}
-                <img src="{{ img.image.url }}" alt="More of {{ product.name }}" loading="lazy" onclick="swapImg(this)" onerror="this.remove()">
+                <img src="{{ img.image.url }}" alt="More of {{ product.name }}" loading="lazy" data-swap onerror="this.remove()">
             {% endfor %}
         </div>
         {% endif %}
@@ -37,26 +39,29 @@
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-desc">{{ product.description|truncatechars:70 }}</p>
             <p class="price">₹{{ product.price }}</p>
-            <p class="seller-line">Sold by {{ product.seller.shop_name }} &middot; 📞 {{ product.seller.phone }}</p>
+            <p class="seller-line">Sold by {{ product.seller.shop_name }} &middot; 📞 <a href="tel:{{ product.seller.phone }}">{{ product.seller.phone }}</a></p>
 
-            {% if product.seller.average_rating %}
-                <p class="rating">Shop rating: ★ {{ product.seller.average_rating }} ({{ product.seller.review_count }} review{{ product.seller.review_count|pluralize }})</p>
+            {% if product.shop_rating %}
+                <p class="rating">Shop rating: ★ {{ product.shop_rating }} ({{ product.shop_review_count }} review{{ product.shop_review_count|pluralize }})</p>
             {% endif %}
 
-            {% if product.reviews.count %}
-                <p class="rating">★ {{ product.reviews.count }} review{{ product.reviews.count|pluralize }}</p>
+            {% if product.review_count %}
+                <p class="rating">★ {{ product.review_avg }} · {{ product.review_count }} review{{ product.review_count|pluralize }}</p>
             {% else %}
                 <p class="rating">No reviews yet</p>
             {% endif %}
 
-            {% for review in product.reviews.all|slice:":1" %}
-                <p class="review-snippet">"{{ review.comment|truncatechars:60 }}" - {{ review.customer.name }}</p>
-            {% endfor %}
+            {% if product.latest_review and product.latest_review.comment %}
+                <p class="review-snippet">"{{ product.latest_review.comment|truncatechars:60 }}" - {{ product.latest_review.customer.name }}</p>
+            {% endif %}
 
             {% if request.session.customer_id %}
             <div class="card-actions">
                 <a class="btn btn-sm" href="/order/{{ product.id }}/">Buy Now</a>
-                <a class="btn btn-sm btn-ghost" href="/product/{{ product.id }}/wishlist/">♡ Wishlist</a>
+                <form method="post" action="/product/{{ product.id }}/wishlist/" class="inline-form">
+                    {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-sm btn-ghost">{% if product.in_wishlist %}♥ Saved{% else %}♡ Wishlist{% endif %}</button>
+                </form>
                 <a class="btn btn-sm btn-ghost" href="/messages/seller/{{ product.seller.id }}/">Message</a>
                 <a class="btn btn-sm btn-ghost" href="/product/{{ product.id }}/review/">Review</a>
                 <a class="btn btn-sm btn-ghost" href="/seller/{{ product.seller.id }}/review/">Rate Shop</a>
@@ -68,4 +73,12 @@
     <p class="empty">No products found.</p>
     {% endfor %}
 </div>
+
+{% if page.has_other_pages %}
+<nav class="pager" aria-label="Pages">
+    {% if page.has_previous %}<a class="btn btn-sm btn-ghost" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.previous_page_number }}">← Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-sm btn-ghost" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.next_page_number }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}

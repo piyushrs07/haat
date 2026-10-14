@@ -10,10 +10,10 @@
         <a class="btn btn-lg" href="/products/">Browse Products</a>
         {% if request.session.customer_id %}
             <a class="btn btn-light btn-lg" href="/my-orders/">My Orders</a>
-            <a class="btn btn-outline btn-lg" href="/logout/">Logout</a>
+            <form method="post" action="/logout/" class="inline-form">{% csrf_token %}<button type="submit" class="btn btn-outline btn-lg">Logout</button></form>
         {% elif request.session.seller_id %}
             <a class="btn btn-light btn-lg" href="/seller/dashboard/">My Dashboard</a>
-            <a class="btn btn-outline btn-lg" href="/logout/">Logout</a>
+            <form method="post" action="/logout/" class="inline-form">{% csrf_token %}<button type="submit" class="btn btn-outline btn-lg">Logout</button></form>
         {% else %}
             <a class="btn btn-light btn-lg" href="/register/customer/">Join as Customer</a>
             <a class="btn btn-outline btn-lg" href="/register/seller/">Become a Seller</a>

@@ -309,3 +309,82 @@ label { font-weight: 600; color: var(--dark); }
     .product-img { height: 150px; }
     .container { margin-top: 16px; }
 }
+
+/* =====================================================================
+   Additions: forms-as-buttons, mobile ergonomics, installed-app (PWA) mode
+   ===================================================================== */
+button { font-family: inherit; }
+img { max-width: 100%; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+.nav-burger:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn:disabled, button:disabled { opacity: 0.6; cursor: wait; }
+.product-name, .product-desc, .bubble, .notif span, .seller-line { overflow-wrap: anywhere; }
+
+/* Notches / rounded corners when installed to the home screen */
+.navbar { padding-top: calc(10px + env(safe-area-inset-top, 0px));
+          padding-left: calc(20px + env(safe-area-inset-left, 0px));
+          padding-right: calc(20px + env(safe-area-inset-right, 0px)); }
+.container { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.site-footer { padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+
+/* Logout and other POST actions that must look like links/buttons */
+.inline-form { display: inline; margin: 0; }
+.nav-form { margin: 0; display: contents; }
+.nav-btn { background: none; border: none; color: #f4e9dc; font-size: 0.95rem; cursor: pointer; padding: 0; }
+.nav-btn:hover { color: var(--primary); }
+.link-btn { background: none; border: none; color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 1rem; padding: 10px; }
+button.btn.btn-outline.btn-lg { cursor: pointer; }
+
+.error-box { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
+.error-box ul { margin: 0 0 0 18px; }
+.error-box a { color: #721c24; font-weight: 600; }
+.hint { display: block; margin: -8px 0 12px; opacity: 0.7; font-size: 0.8rem; }
+.check-row { display: flex; align-items: flex-start; gap: 10px; font-weight: 500; margin: 4px 0 16px; }
+.check-row input { width: auto; margin: 4px 0 0; flex-shrink: 0; transform: scale(1.3); }
+.estimate { margin: 8px 0; font-weight: 600; color: var(--primary); }
+.alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+.pager { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 24px 0 8px; flex-wrap: wrap; }
+
+.install-area { margin-top: 12px; }
+.install-hint { margin-top: 8px; font-size: 0.85rem; opacity: 0.9; }
+.site-footer .btn-light { color: var(--dark); }
+
+/* Nav links that are really buttons need the same look inside the mobile drawer */
+@media (max-width: 720px) {
+    .nav-form { display: block; width: 100%; }
+    .nav-btn { width: 100%; text-align: left; padding: 11px 4px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+    .nav-burger { padding: 6px 10px; margin: -6px -10px -6px 0; }
+}
+
+/* Finger-friendly controls on touch screens (>= 44px tall, WCAG / Apple HIG) */
+@media (pointer: coarse) {
+    .btn { min-height: 44px; }
+    .btn-sm { min-height: 44px; padding: 10px 14px; display: inline-flex; align-items: center; justify-content: center; }
+    .nav-links a, .nav-btn { min-height: 44px; display: flex; align-items: center; }
+    .chip { padding: 11px 18px; }
+    input, select, textarea { min-height: 44px; }
+    .gallery-x { width: 30px; height: 30px; font-size: 18px; line-height: 28px; top: -10px; right: -10px; }
+    .thumb-row img { width: 56px; height: 56px; }
+}
+
+@media (max-width: 600px) {
+    .status-form { flex-wrap: wrap; }
+    .status-form select { flex: 1 1 100%; width: 100%; }
+    .row-card > div:last-child { text-align: left !important; }
+    .chat-box { height: 58vh; height: 58dvh; min-height: 260px; }
+    .bubble { max-width: 88%; }
+    .form-box { padding: 18px 14px; }
+    .grid { grid-template-columns: 1fr; }
+    .stats-strip { margin-left: 4px; margin-right: 4px; }
+    .card-actions .btn { flex: 1 1 auto; text-align: center; }
+    .card-actions .inline-form { flex: 1 1 auto; display: flex; }
+    .card-actions .inline-form .btn { flex: 1; }
+    .notif { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+@media (min-width: 601px) and (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Launched from the home screen: no browser chrome, so keep the content clear of system bars */
+@media (display-mode: standalone) {
+    body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

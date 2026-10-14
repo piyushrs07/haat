@@ -18,6 +18,7 @@ class Customer(models.Model):
     is_verified = models.BooleanField(default=False)
     otp_code = models.CharField(max_length=6, blank=True, null=True)
     otp_created_at = models.DateTimeField(blank=True, null=True)
+    otp_attempts = models.PositiveSmallIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -45,6 +46,7 @@ class Seller(models.Model):
     is_verified = models.BooleanField(default=False)
     otp_code = models.CharField(max_length=6, blank=True, null=True)
     otp_created_at = models.DateTimeField(blank=True, null=True)
+    otp_attempts = models.PositiveSmallIntegerField(default=0)
 
     is_approved = models.BooleanField(default=False)
     is_suspended = models.BooleanField(default=False)
@@ -198,6 +200,22 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient_type', 'recipient_id', 'is_read'], name='notif_recipient_unread_idx'),
+        ]
 
     def __str__(self):
         return f'{self.recipient_type} #{self.recipient_id}: {self.message}'
+
+
+class ThrottleEvent(models.Model):
+    """One row per failed login / OTP guess / OTP resend. Used by core/security.py to rate-limit
+    abuse. Stored in the database (not memory) so it works across all gunicorn workers."""
+    key = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['key', 'created_at'], name='throttle_key_time_idx')]
+
+    def __str__(self):
+        return f'{self.key} @ {self.created_at:%Y-%m-%d %H:%M:%S}'

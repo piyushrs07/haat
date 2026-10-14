@@ -15,7 +15,10 @@
             <p class="seller-line">Sold by {{ item.product.seller.shop_name }}</p>
             <div class="card-actions">
                 <a class="btn btn-sm" href="/order/{{ item.product.id }}/">Buy Now</a>
-                <a class="btn btn-sm btn-ghost" href="/product/{{ item.product.id }}/wishlist/">Remove</a>
+                <form method="post" action="/product/{{ item.product.id }}/wishlist/" class="inline-form">
+                    {% csrf_token %}<input type="hidden" name="next" value="/wishlist/">
+                    <button type="submit" class="btn btn-sm btn-ghost">Remove</button>
+                </form>
             </div>
         </div>
     </div>

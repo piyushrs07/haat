@@ -3,6 +3,13 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+
+    # Deployment + PWA plumbing
+    path('healthz', views.healthz, name='healthz'),
+    path('manifest.webmanifest', views.manifest, name='manifest'),
+    path('service-worker.js', views.service_worker, name='service_worker'),
+    path('offline/', views.offline, name='offline'),
+
     path('register/customer/', views.register_customer, name='register_customer'),
     path('register/seller/', views.register_seller, name='register_seller'),
     path('login/customer/', views.login_customer, name='login_customer'),

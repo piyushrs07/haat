@@ -1,26 +1,25 @@
-{% load static %}
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}Haat - Local Market{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 2C14.6 2 7 9.4 7 18.5 7 30.5 24 46 24 46s17-15.5 17-27.5C41 9.4 33.4 2 24 2z' fill='%23e76f51'/%3E%3Cpath d='M13 15 L16 9 H32 L35 15 Z' fill='white'/%3E%3Crect x='15' y='19' width='18' height='10' rx='1' fill='white'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="{% static 'core/style.css' %}">
-    <link rel="manifest" href="{% static 'core/manifest.json' %}">
+    <meta name="description" content="Haat - shop local, support small businesses in Goa.">
     <meta name="theme-color" content="#e76f51">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/service-worker.js');
-        });
-      }
-    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 2C14.6 2 7 9.4 7 18.5 7 30.5 24 46 24 46s17-15.5 17-27.5C41 9.4 33.4 2 24 2z' fill='%23e76f51'/%3E%3Cpath d='M13 15 L16 9 H32 L35 15 Z' fill='white'/%3E%3Crect x='15' y='19' width='18' height='10' rx='1' fill='white'/%3E%3C/svg%3E">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="{% static 'core/icons/apple-touch-icon.png' %}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Haat">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="{% static 'core/style.css' %}">
+    <script src="{% static 'core/app.js' %}" defer></script>
 </head>
 <body>
     <header class="navbar">
         <a href="/" class="brand">
-            <svg width="38" height="38" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <svg width="38" height="38" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M24 2C14.6 2 7 9.4 7 18.5 7 30.5 24 46 24 46s17-15.5 17-27.5C41 9.4 33.4 2 24 2z" fill="#e76f51"/>
                 <path d="M13 15 L16 9 H32 L35 15 Z" fill="#ffffff"/>
                 <path d="M13 15 q2.75 4 5.5 0 q2.75 4 5.5 0 q2.75 4 5.5 0 q2.75 4 5.5 0 Z" fill="#ffffff"/>
@@ -31,7 +30,7 @@
         </a>
 
         <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle menu">
-        <label for="nav-toggle" class="nav-burger">&#9776;</label>
+        <label for="nav-toggle" class="nav-burger" role="button" aria-label="Open menu">&#9776;</label>
 
         <nav class="nav-links">
             <a href="/products/">Browse</a>
@@ -39,12 +38,12 @@
                 <a href="/wishlist/">Wishlist</a>
                 <a href="/my-orders/">My Orders</a>
                 <a href="/notifications/">🔔 Alerts{% if unread_count %}<span class="count">{{ unread_count }}</span>{% endif %}</a>
-                <a href="/logout/">Logout</a>
+                <form method="post" action="/logout/" class="nav-form">{% csrf_token %}<button type="submit" class="nav-btn">Logout</button></form>
             {% elif request.session.seller_id %}
                 <a href="/seller/dashboard/">Dashboard</a>
                 <a href="/seller/add-product/">Add Product</a>
                 <a href="/notifications/">🔔 Alerts{% if unread_count %}<span class="count">{{ unread_count }}</span>{% endif %}</a>
-                <a href="/logout/">Logout</a>
+                <form method="post" action="/logout/" class="nav-form">{% csrf_token %}<button type="submit" class="nav-btn">Logout</button></form>
             {% endif %}
         </nav>
     </header>
@@ -52,7 +51,7 @@
     <main class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
             {% endfor %}
         {% endif %}
         {% block content %}{% endblock %}
@@ -60,28 +59,10 @@
 
     <footer class="site-footer">
         <strong>Haat</strong> &middot; Shop local, support small businesses &middot; Goa
+        <div class="install-area">
+            <button type="button" id="install-btn" class="btn btn-sm btn-light" hidden>📲 Install the Haat app</button>
+            <p id="ios-install-hint" class="install-hint" hidden>To install on iPhone/iPad: tap <b>Share</b> <span aria-hidden="true">⬆️</span> then <b>Add to Home Screen</b>.</p>
+        </div>
     </footer>
-
-    <script>
-      // Click a small thumbnail to show it as the big product photo
-      function swapImg(thumb) {
-        var card = thumb.closest('.product-card');
-        var main = card && card.querySelector('.product-img img');
-        if (main) { main.src = thumb.src; }
-      }
-      // Live preview of photos chosen in the upload forms
-      document.querySelectorAll('input[type=file][data-preview]').forEach(function (input) {
-        input.addEventListener('change', function () {
-          var box = document.getElementById(input.dataset.preview);
-          if (!box) return;
-          if (!input.multiple) { box.innerHTML = ''; }
-          Array.prototype.forEach.call(input.files, function (file) {
-            var img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            box.appendChild(img);
-          });
-        });
-      });
-    </script>
 </body>
 </html>

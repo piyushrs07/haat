@@ -5,41 +5,42 @@
 <div class="form-box">
     <h2 class="section-title" style="margin-top:0;">Register Your Shop</h2>
     <p style="margin-bottom:14px; opacity:0.8;">Your account will be reviewed and approved before you can list products.</p>
-    {% if error %}<p class="error">{{ error }} <a href="/login/seller/">Go to login</a></p>{% endif %}
+    {% include 'core/_errors.html' with login_url='/login/seller/' %}
     <form method="POST">
         {% csrf_token %}
-        <label>Your Name</label>
-        <input type="text" name="name" required>
+        <label for="f-name">Your Name</label>
+        <input id="f-name" type="text" name="name" value="{{ form.name }}" maxlength="100" autocomplete="name" required>
 
-        <label>Email</label>
-        <input type="email" name="email" required>
+        <label for="f-email">Email</label>
+        <input id="f-email" type="email" name="email" value="{{ form.email }}" maxlength="254" autocomplete="email" autocapitalize="none" required>
 
-        <label>Password</label>
-        <input type="password" name="password" required>
+        <label for="f-password">Password</label>
+        <input id="f-password" type="password" name="password" minlength="8" autocomplete="new-password" required>
+        <small class="hint">At least 8 characters; not too common or all numbers.</small>
 
-        <label>Phone</label>
-        <input type="text" name="phone" required>
+        <label for="f-phone">Phone</label>
+        <input id="f-phone" type="tel" inputmode="tel" name="phone" value="{{ form.phone }}" maxlength="15" autocomplete="tel" required>
 
-        <label>Shop Name</label>
-        <input type="text" name="shop_name" required>
+        <label for="f-shop">Shop Name</label>
+        <input id="f-shop" type="text" name="shop_name" value="{{ form.shop_name }}" maxlength="100" required>
 
-        <label>Type of Products (e.g. handmade, food, crafts)</label>
-        <input type="text" name="product_type" required>
+        <label for="f-type">Type of Products (e.g. handmade, food, crafts)</label>
+        <input id="f-type" type="text" name="product_type" value="{{ form.product_type }}" maxlength="100" required>
 
-        <label>Street / Area</label>
-        <input type="text" name="street_address" required>
+        <label for="f-street">Street / Area</label>
+        <input id="f-street" type="text" name="street_address" value="{{ form.street_address }}" maxlength="255" autocomplete="address-line1" required>
 
-        <label>City</label>
-        <input type="text" name="city" required>
+        <label for="f-city">City</label>
+        <input id="f-city" type="text" name="city" value="{{ form.city }}" maxlength="100" autocomplete="address-level2" required>
 
-        <label>State</label>
-        <input type="text" name="state" value="Goa" required>
+        <label for="f-state">State</label>
+        <input id="f-state" type="text" name="state" value="{{ form.state|default:'Goa' }}" maxlength="100" autocomplete="address-level1" required>
 
-        <label>Pincode</label>
-        <input type="text" name="pincode" maxlength="6" required>
+        <label for="f-pin">Pincode</label>
+        <input id="f-pin" type="text" name="pincode" value="{{ form.pincode }}" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="postal-code" required>
 
-        <label>Business Description</label>
-        <textarea name="description" rows="3"></textarea>
+        <label for="f-desc">Business Description</label>
+        <textarea id="f-desc" name="description" rows="3" maxlength="1000">{{ form.description }}</textarea>
 
         <button type="submit" class="btn" style="width:100%;">Submit for Approval</button>
     </form>
